@@ -19,8 +19,8 @@ A versão atual é um RPG de estratégia narrativa mobile-first em JavaScript pu
 |---|---|---|---|
 | M0 — Auditoria | Mapear estado, funções de batalha, interface, persistência e publicação | Documento com arquitetura e riscos | Concluído |
 | M1 — Fundação Phaser | Integrar Phaser 3 com carregamento controlado, canvas responsivo, fallback clássico | Jogo abre no Pages sem regressão e mostra uma cena Phaser de teste | Parcial: laboratório isolado e link no menu; ainda falta engine local e integração embutida |
-| M2 — Visual de batalha | Cenário, combatentes, barras de PV/Foco, seleção visual e efeitos simples | Mesma batalha representada em canvas sem alterar regras | Parcial: PV e combatentes reais lidos do save, inspeção por toque; faltam Foco visual, efeitos e atualização em tempo real |
-| M3 — Interação | Toque nos alvos, animação de ataques, cura, proteção, efeitos e sincronização | Turno completo jogável via Phaser; mesma resolução do modo clássico | Pendente |
+| M2 — Visual de batalha | Cenário, combatentes, barras de PV/Foco, seleção visual e efeitos simples | Mesma batalha representada em canvas sem alterar regras | Parcial: canvas embutido com PV/Foco, seleção, guarda e estado de ação; atualização por remontagem entre ações, arte provisória |
+| M3 — Interação | Toque nos alvos, animação de ataques, cura, proteção, efeitos e sincronização | Turno completo jogável via Phaser; mesma resolução do modo clássico | Parcial: seleção de aliados/inimigos no canvas aciona comandos reais; botões de habilidade/ataque/cura/defesa continuam em HTML; animações de golpes pendentes |
 | M4 — Direção de arte | Pixel art autoral, cenários por ato, spritesheets e efeitos | Assets locais e visual consistente, sem dependência de CDN | Pendente |
 | M5 — UX | Acessibilidade, feedback, áudio opcional, escala e otimização | Android e desktop, teclado/toque, desempenho aceitável | Pendente |
 | M6 — PWA/QA | Cache de engine/assets, migração de saves, testes e release | Pages instalável, offline testado e regressões resolvidas | Pendente |
@@ -81,3 +81,32 @@ Evitar que cenas Phaser alterem diretamente `localStorage` ou a estrutura do sav
 4. Substituir blocos provisórios por sprites pixel-art locais; preparar variações para seis distritos.
 
 **QA:** revisão estática do código; publicação por commits na branch principal. Testes manuais em navegador e publicação efetiva do Pages ainda precisam ser confirmados.
+
+## Entrega de 16/10/2026 — combate Phaser integrado (M2/M3, parcial)
+
+**Publicação:** alterações diretamente na branch `main` para GitHub Pages. O modo Phaser **não é mais apenas um laboratório independente**: nas batalhas normais, `battleScreen()` monta a cena `phaser-battle.js` dentro da interface da campanha.
+
+### Implementado
+- Introduzido `phaser-battle.js`: cenário responsivo 420×460, unidades com PV e Foco, seleção, indicador de guarda, herói já utilizado e selo de Ulorian.
+- Adicionado `window.RevoltBattleBridge` em `app.js`, com um **snapshot somente leitura do estado em memória** e `command(action)` devolvendo comandos para o `doAction` original.
+- Clique/toque nos retratos Phaser direciona `selectHero:<id>` e `targetE:<id>`; **ataque, habilidades, cura, defesa, suporte sobrenatural e turno inimigo permanecem calculados exclusivamente pelo código original**.
+- Após ações, a tela Phaser é reconstruída com dados atuais sem usar saves intermediários. `main()` descarta instâncias anteriores para evitar canvases duplicados.
+- Mantidos os controles HTML de ações, registros de combate, menus e fluxos de história. Se Phaser falhar ao carregar, o DOM clássico permanece como fallback para continuar a campanha.
+- `index.html` inclui `phaser-battle.js` antes de `app.js` e oculta os retratos clássicos quando o canvas está pronto.
+
+### Limitações e próximos incrementos
+1. A biblioteca Phaser ainda carrega via CDN e requer rede na primeira abertura; tornar o motor local é prioritário para PWA.
+2. O cenário atual usa formas geométricas (temporárias), não os sprites pixel-art finais.
+3. Os botões de ações permanecem HTML: a migração total da interface e animações de combate está pendente.
+4. Na implementação atual, cada interação remonta a cena inteira; migrar para atualização incremental e transições entre ações.
+5. Revisar o CSS do canvas nos tamanhos de celular, depurar eventos de toque e confirmar condições do boss final.
+6. Integrar arquivos Phaser ao cache versionado, depois medir comportamento de atualização e uso offline.
+
+### Roteiro de teste no GitHub Pages
+- Abrir o jogo principal (`/index.html`), iniciar/continuar campanha e entrar em batalha.
+- Verificar se o canvas Phaser aparece diretamente na tela de combate; selecionar Coto no **canvas**, tocar **Atacar** no HTML e selecionar o inimigo no **canvas**.
+- Testar **Defender**, **Curativo**, habilidades (quando disponíveis), suporte e encerramento de rodada; observar log, mortes, vitória e continuidade da campanha.
+- Se a CDN estiver indisponível, validar que a batalha clássica continua utilizável.
+- Testar uma batalha salva, reload e resolução sem perda do save.
+
+**Validação declarada:** código integrado e enviado ao GitHub. **Não houve teste automatizado de navegador, teste offline nem confirmação visual da implantação no Pages**; nenhuma dessas atividades é marcada como aprovada ainda.
