@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#10151c"><title>Revolta — Laboratório Phaser</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#0b1018;color:#eee1c8;font:14px system-ui;text-align:center}header{padding:16px 8px}h1{font:24px Georgia;margin:0 0 6px}p{line-height:1.5}#game{width:min(100%,460px);margin:auto;border:1px solid #69503b;min-height:320px}canvas{display:block}a{color:#f1cb90}button{padding:12px;background:#483427;color:#fff;border:1px solid #b89b72;border-radius:6px}footer{padding:15px;max-width:460px;margin:auto}#status{color:#f1cb90}</style></head>
+<body><header><h1>A Revolta dos Mendigos</h1><p>Laboratório visual • Phaser 3 • M1 experimental</p></header><div id="game"></div><p id="status">Carregando motor gráfico…</p><footer><p>Protótipo independente: nenhuma alteração no salvamento ou nas regras da campanha. Toque nos combatentes para selecioná-los.</p><a href="./index.html">← Voltar ao jogo clássico</a></footer>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+<script>
+(()=>{'use strict';const status=document.getElementById('status');
+if(!window.Phaser){status.textContent='Não foi possível carregar o Phaser. Conecte-se à internet para abrir este laboratório.';return;}
+const W=420,H=600;
+class RevoltScene extends Phaser.Scene{
+constructor(){super('RevoltScene');this.selected=null;}
+create(){
+const g=this.add.graphics();g.fillGradientStyle(0x111a26,0x111a26,0x30303b,0x30303b).fillRect(0,0,W,H);
+g.fillStyle(0x262a35).fillRect(0,70,W,310);
+for(let i=0;i<9;i++){let x=i*52-8;g.fillStyle(i%2?0x39404a:0x343943).fillRect(x,130+(i%3)*14,42,220);g.fillStyle(0x171f29).fillRect(x+12,163+(i%3)*14,16,28);}
+g.fillStyle(0x171b23).fillRect(0,370,W,230);g.lineStyle(2,0x8a6950).strokeRect(12,12,W-24,H-24);
+this.add.text(W/2,34,'DISTRITO AFOGADO',{fontFamily:'Georgia',fontSize:'21px',color:'#e9c68f'}).setOrigin(.5);
+this.add.text(W/2,67,'A PRIMEIRA ESPADA • CENA EXPERIMENTAL',{fontFamily:'monospace',fontSize:'10px',color:'#aab4bb'}).setOrigin(.5);
+const units=[{x:100,y:245,name:'COTO',color:0xa88d64,enemy:false},{x:315,y:245,name:'GUARDA',color:0x7d5060,enemy:true},{x:100,y:350,name:'MARGA',color:0x698b81,enemy:false},{x:315,y:350,name:'ARQUEIRO',color:0x6b617d,enemy:true}];
+units.forEach((u,i)=>{const container=this.add.container(u.x,u.y);const shadow=this.add.ellipse(0,33,62,15,0x000000,.5);const body=this.add.rectangle(0,0,42,62,u.color).setStrokeStyle(3,0x15151c);const head=this.add.circle(0,-40,17,0xd5b99c).setStrokeStyle(2,0x1a1720);const eyes=this.add.rectangle(0,-43,17,3,0x25222b);const name=this.add.text(0,48,u.name,{fontFamily:'monospace',fontSize:'12px',color:'#f1e4d2'}).setOrigin(.5);container.add([shadow,body,head,eyes,name]);const hit=this.add.zone(u.x,u.y,85,120).setInteractive({useHandCursor:true});hit.on('pointerdown',()=>{if(this.selected)this.selected.setStrokeStyle(0);this.selected=body;body.setStrokeStyle(4,0xffd27b);this.info.setText(u.name+' selecionado • '+(u.enemy?'FORÇA DA CORTE':'RESISTÊNCIA'));this.tweens.add({targets:container,y:u.y-8,duration:130,yoyo:true});});});
+this.info=this.add.text(W/2,485,'TOQUE EM UM COMBATENTE',{fontFamily:'monospace',fontSize:'13px',color:'#e8c186',align:'center'}).setOrigin(.5);
+this.add.text(W/2,536,'Esta cena não executa ataques nem modifica o save.',{fontFamily:'monospace',fontSize:'10px',color:'#9ba9b5'}).setOrigin(.5);
+status.textContent='Phaser iniciado. Cena experimental pronta.';
+}}
+new Phaser.Game({type:Phaser.AUTO,parent:'game',width:W,height:H,backgroundColor:'#111a26',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_HORIZONTALLY},render:{pixelArt:true,antialias:false},scene:[RevoltScene]});
+})();
+</script></body></html>
