@@ -11,6 +11,8 @@ function play(scene,options){
   const aAfter=after.units.find(u=>u.id===options.attackerId);
   if(!a||!d||!dAfter||!aAfter){options.onDone();return;}
   const lost=Math.max(0,d.hp-dAfter.hp),counter=Math.max(0,a.hp-aAfter.hp);
+  const viewportHeight=scene.scale.height;
+  const blocker=scene.add.zone(W/2,viewportHeight/2,W,viewportHeight).setDepth(1999).setInteractive();
   const rootLayer=scene.add.container(0,0).setDepth(2000);
   let finished=false;
   const jobs=[];
@@ -18,8 +20,8 @@ function play(scene,options){
   const add=(object)=>{rootLayer.add(object);return object;};
   const rect=(x,y,w,h,color,alpha=1)=>add(scene.add.rectangle(x,y,w,h,color,alpha));
   const text=(x,y,s,sz=12,color='#f7e6c7')=>add(scene.add.text(x,y,s,{fontFamily:'monospace',fontSize:String(sz)+'px',color,fontStyle:'bold',align:'center',stroke:'#18212c',strokeThickness:1}).setOrigin(.5));
-  const finish=()=>{if(finished)return;finished=true;jobs.forEach(j=>j.remove(false));rootLayer.destroy(true);options.onDone();};
-  rect(210,230,W,H,0x080b12,.88);
+  const finish=()=>{if(finished)return;finished=true;jobs.forEach(j=>j.remove(false));rootLayer.destroy(true);blocker.destroy();options.onDone();};
+  rect(210,viewportHeight/2,W,viewportHeight,0x080b12,.9);
   rect(210,229,406,310,0x101d2a).setStrokeStyle(3,0xd1a56c);
   rect(210,95,396,34,0x25303b);
   text(210,95,'✦ CONFRONTO ✦',16,'#f5cc8c');
