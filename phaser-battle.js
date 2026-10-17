@@ -8,12 +8,16 @@ function destroy(){token++;if(game){game.destroy(true);game=null}}
 function mount(){
  const host=document.getElementById('phaser-battle');if(!host||!window.RevoltBattleBridge)return;
  const my=++token;
+ host.classList.add('phaser-loading');
+ host.textContent='Iniciando campo de batalha…';
  engine().then(ok=>{
-  if(!ok||my!==token||!document.getElementById('phaser-battle'))return;
+  if(my!==token||!document.getElementById('phaser-battle'))return;
+  if(!ok){host.textContent='Phaser indisponível; utilize os controles clássicos abaixo.';host.classList.remove('phaser-loading');console.warn('Phaser: falha ao carregar engine');return;}
   const root=document.getElementById('phaser-battle');
   const state=window.RevoltBattleBridge.snapshot();
   if(!state||!state.enemies||!state.heroes)return;
   const W=420,H=650;
+  root.textContent='';
   
   class Battle extends Phaser.Scene{
    constructor(){super({key:'battle'});}
@@ -81,10 +85,11 @@ function mount(){
     }
     control(210,592,390,'ENCERRAR RODADA · VEZ DA CORTE','enemyTurn',!waiting);
     this.add.text(W/2,626,'AUXÍLIOS SOBRENATURAIS E REGISTRO ABAIXO',{fontFamily:'monospace',fontSize:'10px',color:'#c8b294'}).setOrigin(.5);
+    root.classList.remove('phaser-loading');
     root.classList.add('phaser-ready');
    }
   }
-  try{game=new Phaser.Game({type:Phaser.AUTO,parent:root,width:W,height:H,transparent:false,backgroundColor:'#16202e',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_HORIZONTALLY},render:{pixelArt:true,antialias:false},scene:[Battle]});}catch(e){root.classList.remove('phaser-ready');game=null;console.error('Phaser combat fallback:',e)}
+  try{game=new Phaser.Game({type:Phaser.AUTO,parent:root,width:W,height:H,transparent:false,backgroundColor:'#16202e',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_HORIZONTALLY},render:{pixelArt:true,antialias:false},scene:[Battle]});}catch(e){root.classList.remove('phaser-ready','phaser-loading');root.textContent='Erro no Phaser; controles clássicos disponíveis.';game=null;console.error('Phaser combat fallback:',e)}
  });
 }
 window.PhaserBattle={mount,destroy};
