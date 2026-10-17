@@ -11,6 +11,13 @@ function play(scene,options){
   const aAfter=after.units.find(u=>u.id===options.attackerId);
   if(!a||!d||!dAfter||!aAfter){options.onDone();return;}
   const kind=options.kind||'attack';
+  const ability=String(options.ability||'').toLowerCase();
+  const abilityTitles={
+    levante:'LEVANTE POPULAR',partilha:'PARTILHA',sombra:'VÉU DAS SOMBRAS',
+    martelo:'MARTELO DE SILAS',canto:'CANTO DO POVO',rede:'REDES DE DARA',
+    brasa:'BRASA LIBERTA',baluarte:'BALUARTE',ervas:'ERVAS',
+    defender:'GUARDA',graca:'GRAÇA DO PALADINO',pacto:'PACTO DA FENDA'
+  };
   const fatal=kind==='attack'&&d.hp>0&&dAfter.hp<=0;
   const lost=Math.max(0,d.hp-dAfter.hp),counter=Math.max(0,a.hp-aAfter.hp);
   const viewportHeight=scene.scale.height;
@@ -29,7 +36,7 @@ function play(scene,options){
   text(210,95,kind==='heal'?'✚ CURA ✚':kind==='guard'?'⬡ PROTEÇÃO ⬡':fatal?'✦ GOLPE FINAL ✦':'✦ CONFRONTO ✦',16,fatal?'#f19c8c':'#f5cc8c');
   if(options.sequenceTotal>1)text(210,118,'EVENTO '+options.sequencePosition+' / '+options.sequenceTotal,10,'#b4d9da');
   rect(210,360,396,35,0x26343d);
-  const eventTitle=text(210,359,'PREPARANDO O GOLPE',11,'#e9d0a2');
+  const eventTitle=text(210,359,abilityTitles[ability]||'PREPARANDO O GOLPE',11,'#e9d0a2');
   const allyLeft=a.side==='ally',xAtt=allyLeft?113:305,xDef=allyLeft?307:111,yChar=244;
   // Local procedural pixel sprites: 20x30 pixels ×4. No remote character images.
   function makeFighter(u,x,faceRight){
@@ -136,6 +143,60 @@ function play(scene,options){
     const floater=text(x,208,'−'+damage,23,'#ff8588');
     scene.tweens.add({targets:floater,y:181,alpha:0,duration:700,onComplete:()=>floater.destroy()});
   }
+  // Ability VFX are driven by explicit combat event metadata, never by damage guesses.
+  function abilityFx(x,y,phase){
+    if(!ability||ability==='defender'||ability==='ervas')return;
+    const colors={brasa:0xfa8d4f,rede:0x94cbd3,sombra:0x9182bd,martelo:0xe5b16d,
+      levante:0xe6d48c,partilha:0xe2b67b,canto:0x9cdec1,baluarte:0x91bfe7,
+      graca:0xf6dca3,pacto:0xbf79be};
+    const tint=colors[ability]||0xb7a4e7;
+    const layer=add(scene.add.container(0,0));
+    const attach=obj=>{layer.add(obj);return obj};
+    const short=phase==='cast';
+    if(ability==='rede'){
+      const g=attach(scene.add.graphics());
+      g.lineStyle(3,tint,.92);
+      const size=short?29:55;
+      for(let k=-2;k<=2;k++){
+        g.lineBetween(x-size,y+k*10,x+size,y+k*10);
+        g.lineBetween(x+k*12,y-size*.65,x+k*12,y+size*.65);
+      }
+    }else if(ability==='sombra'){
+      for(let i=0;i<5;i++){
+        const ghost=attach(scene.add.ellipse(x+(i-2)*14,y+(i%2?13:-13),20,60,tint,.3));
+        scene.tweens.add({targets:ghost,y:ghost.y-24,alpha:0,duration:480});
+      }
+    }else if(ability==='martelo'){
+      const g=attach(scene.add.graphics());g.lineStyle(short?3:5,tint,.9);
+      for(let i=0;i<7;i++){
+        const a=i*Math.PI*2/7;
+        g.lineBetween(x+Math.cos(a)*7,y+Math.sin(a)*7,x+Math.cos(a)*(short?28:75),y+Math.sin(a)*(short?18:42));
+      }
+    }else if(ability==='baluarte'){
+      const shield=attach(scene.add.polygon(x,y,[-27,-30,27,-30,29,12,0,40,-29,12],tint,.22).setStrokeStyle(4,tint));
+      scene.tweens.add({targets:shield,scale:1.45,duration:400});
+    }else if(ability==='canto'){
+      for(let i=0;i<6;i++){
+        const note=attach(scene.add.text(x+(i-3)*17,y+(i%2)*14,i%2?'♪':'♫',{fontSize:'19px',color:'#bcffe1'}).setOrigin(.5));
+        scene.tweens.add({targets:note,y:note.y-35,alpha:0,duration:470+i*28});
+      }
+    }else{
+      // Flame, blessing, pact, and uprising motifs get different geometric sparks.
+      const count=ability==='brasa'?12:8;
+      for(let i=0;i<count;i++){
+        const a=Math.PI*2*i/count,dist=short?25:40;
+        const cx=x+Math.cos(a)*dist,cy=y+Math.sin(a)*dist*.65;
+        const bit=attach(ability==='levante'
+          ?scene.add.triangle(cx,cy,0,-9,11,0,0,9,tint,.92)
+          :scene.add.star(cx,cy,ability==='pacto'?4:5,3,ability==='brasa'?12:8,tint,.85));
+        scene.tweens.add({targets:bit,x:cx+Math.cos(a)*28,
+          y:cy+(ability==='brasa'?-35:Math.sin(a)*24),
+          alpha:0,scale:short?1.25:1.75,duration:420+i*17});
+      }
+    }
+    scene.tweens.add({targets:layer,alpha:0,duration:short?580:730,
+      onComplete:()=>{if(layer.active)layer.destroy(true)}});
+  }
   if(kind==='heal'||kind==='guard'){
     const healed=Math.max(0,dAfter.hp-d.hp);
     delay(200,()=>{
@@ -143,6 +204,7 @@ function play(scene,options){
       scene.tweens.add({targets:defender.c,scale:1.08,duration:240,yoyo:true,ease:'Sine.easeInOut'});
     });
     delay(420,()=>{
+      abilityFx(xDef,236,'hit');
       const color=kind==='heal'?0x72e5a7:0x89c2f8;
       const ring=add(scene.add.circle(xDef,236,29,color,.14).setStrokeStyle(4,color,.9));
       const symbol=text(xDef,213,kind==='heal'?'✚':'⬡',40,kind==='heal'?'#a5ffbf':'#bfdfff');
@@ -194,8 +256,9 @@ function play(scene,options){
     eventTitle.setText(spell?a.name+' CONJURA!':heavy?a.name+' ERGUE O MARTELO':pierce?a.name+' ARMA A LANÇA':fast?a.name+' AVANÇA NAS SOMBRAS':shieldBash?a.name+' INVESTE!':a.name+' PREPARA O GOLPE');
     scene.tweens.add({targets:attacker.weapon,angle:spell?0:heavy?(allyLeft?-110:110):pierce?(allyLeft?-22:22):(allyLeft?-62:62),duration:heavy?230:130,ease:'Sine.easeOut'});
     scene.tweens.add({targets:attacker.c,y:yChar-(heavy?15:7),duration:140,yoyo:true});
+    if(ability)abilityFx(xAtt,yChar-76,'cast');
     if(spell){
-      magicMotif(xAtt,yChar-76,'cast');
+      if(!ability)magicMotif(xAtt,yChar-76,'cast');
       const charge=add(scene.add.circle(xAtt,yChar-86,12,arcana==='embers'?0xf28a58:arcana==='chorus'?0x9dcdb7:0xd6b9e3,.38));
       scene.tweens.add({targets:charge,scale:2.3,alpha:0,duration:470,onComplete:()=>charge.destroy()});
     }
@@ -210,7 +273,8 @@ function play(scene,options){
     if(fast)scene.tweens.add({targets:attacker.c,alpha:.42,duration:70,yoyo:true,repeat:1});
   });
   delay(impact,()=>{
-    if(spell)magicMotif(xDef,241,'hit');
+    if(ability)abilityFx(xDef,241,'hit');
+    if(spell&&!ability)magicMotif(xDef,241,'hit');
     slash(xDef,241,spell?0xc4a5ff:heavy?0xffa577:pierce?0xb4d6db:fast?0xf6d9e7:0xffd598);
     scene.cameras.main.shake(heavy?195:105,heavy?.008:.004);
     scene.tweens.add({targets:flash,alpha:heavy?.7:.5,duration:heavy?100:60,yoyo:true});
