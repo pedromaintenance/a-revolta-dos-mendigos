@@ -180,3 +180,31 @@ A cena integrada `phaser-battle.js` tem agora **HUD Phaser interativo** de 420×
 **Atenção:** não são spritesheets finais nem pixel art gerada como arquivo: por enquanto são desenhos de formas dentro do Phaser, planejados para serem substituídos por assets autorais. O campo foi refatorado visualmente, não houve migração do suporte sobrenatural nem do restante das telas para o Phaser.
 
 **Teste recomendado no Pages:** retomar a batalha do dia 2, verificar se Coto/Marga e Guarda/Informante não se sobrepõem, selecionar herói e alvo, usar os comandos. Em batalhas futuras com 3–4 combatentes de cada lado, conferir nomes, barras e hitboxes; revisar em celular e desktop. **QA de navegador ainda pendente** — apenas validação estática e commits no GitHub.
+
+## Entrega v5 — sprites CC0 e FX dinâmicos (16/10/2026)
+
+**Motivação:** feedback do jogador com referência a combate JRPG pixelado: sprites dos combatentes ainda eram formados por quadrados sem animação; solicitado uso de free-assets e maior dinamismo visual.
+
+### Implementação publicada em `main`
+- O `phaser-battle.js` passou a carregar uma **imagem real de sprites** do pacote **Kenney Roguelike Characters** (sprites 16×16, licença CC0-1.0). Renderização pixelada ampliada dentro dos containers Phaser. O mapeamento de linhas e colunas é provisório e exige avaliação visual: esse spritesheet consiste em componentes/corpos frontais, não em animações completas.
+- **Origem primária e licença:** https://kenney.nl/assets/roguelike-characters — Creative Commons Zero 1.0 (uso comercial permitido, atribuição opcional).
+- **Espelho técnico empregado:** https://raw.githubusercontent.com/Two-Weeks-Team/openClawWorld/main/packages/client/public/assets/kenney/characters/characters_spritesheet.png — espelho de spritesheet do pacote Kenney. Origem de terceiros, **não é um arquivo versionado dentro do repositório do jogo**.
+- Fallback gráfico geométrico quando a textura não está disponível; o jogo não deve depender de uma textura remota para executar suas regras.
+- Animação **idle** de oscilação suave por unidade; avanço curto do combatente após realizar uma ação, efeito de trajetória, **shake/flash** ao receber dano, números de dano flutuantes, brilho e números positivos ao recuperar PV. Variação guiada pelo snapshot do estado canônico antes/depois do comando, sem alterar dano ou cura.
+- Bridge `RevoltBattleBridge.snapshot()` passa a enviar `enemy.key` para permitir selecionar sprites por arquétipo; o save v1 não muda.
+- Ajuste da proporção CSS `420/520` (antes a classe ready ainda referenciava 420/650); scripts ?v=5, cache `revolta-cache-v5`.
+
+### Riscos conhecidos / próximo trabalho
+- Imagens Kenney têm vista frontal e, nesse pack, são estáticas; idle/ataque são **tweens** sobre uma única imagem. Próximo passo para ação com quadros: localizar spritesheets licenciados com sequência de ataque/hurt/death, armazenar **arquivos PNG localmente** e substituir o espelho externo.
+- A textura é buscada por HTTPS de `raw.githubusercontent.com`: pode falhar em conexões restritas e **não está garantida offline**. Ainda falta incorporar os binários ao GitHub; enquanto isso o fallback geométrico é usado.
+- O Phaser 3 ainda é carregado da CDN jsDelivr, portanto o **combate Phaser não é offline garantido**. A alegação da interface de que o jogo está pronto offline se refere ao núcleo HTML/PWA.
+- Efeitos são calculados pela diferença de PV; o avanço do atacante usa a transição do conjunto `acted` e não distingue golpes de ações de defesa. Melhorar a semântica via eventos estruturados do motor em versão futura.
+- Não foi executado teste visual real no GitHub Pages nem verificação de CORS ou redimensionamento em Android. É obrigatório verificar a aparência e confirmar que os assets efetivamente carregam; se não carregarem, apenas os placeholders serão vistos.
+
+### Como testar
+1. Recarregar o jogo no Pages com conexão e entrar em batalha; conferir sprites pequenos em pixel art, sem os antigos blocos grandes.
+2. Escolher Coto, usar Atacar e escolher um inimigo; observar avanço, flash vermelho e número do dano real. Testar cura com Marga/curativo para número positivo e brilho.
+3. Testar morte, reinício da cena e continuação dos dias para conferir que o canvas não desaparece e que o jogo continua salvando.
+4. Se aparecerem apenas os retângulos provisórios, inspecionar erros de rede/CORS do asset Kenney no console.
+
+**Verificações feitas:** análise estática de sintaxe do JavaScript e commits no GitHub. Validação visual e funcional da entrega no Pages permanece pendente.
