@@ -20,82 +20,101 @@ function mount(){
   const root=document.getElementById('phaser-battle');
   const state=window.RevoltBattleBridge.snapshot();
   if(!state||!state.enemies||!state.heroes)return;
-  const W=420,H=650;
+  const W=420,H=520;
   root.textContent='';
-  
   class Battle extends Phaser.Scene{
    constructor(){super({key:'battle'});}
    create(){
     const state=window.RevoltBattleBridge.snapshot();
     if(!state)return;
     const g=this.add.graphics();
-    g.fillGradientStyle(0x182534,0x182534,0x282c36,0x282c36).fillRect(0,0,W,H);
-    g.fillStyle(0x202d39).fillRect(0,60,W,182);
-    for(let i=0;i<12;i++){
-     const x=i*40-8,y=100+(i%3)*13;
-     g.fillStyle(i%2?0x39404b:0x333c49).fillRect(x,y,32,148);
-     g.fillStyle(0x101923).fillRect(x+10,y+22,12,18);
+    // Compact, theatrical canal square; background stays visually behind the party.
+    g.fillGradientStyle(0x101c2a,0x172333,0x28323b,0x28323b).fillRect(0,0,W,H);
+    g.fillStyle(0x1f2d37).fillRect(0,55,W,207);
+    for(let i=0;i<10;i++){
+      const x=i*48-8,y=103+(i%3)*17;
+      g.fillStyle(i%2?0x3c4851:0x303e49).fillRect(x,y,40,165);
+      g.fillStyle(0x0c1926).fillRect(x+10,y+22,17,29);
+      g.fillStyle(0x76635b).fillRect(x+9,y+20,19,3);
     }
-    g.fillStyle(0x443f3d).fillRect(0,258,W,392);
-    for(let y=266;y<H;y+=20){g.lineStyle(1,0x5d5147,.65).lineBetween(0,y,W,y);}
-    g.lineStyle(2,0x97735b,.7).strokeRect(8,8,W-16,H-16);
-    this.add.text(W/2,22,'✦ '+state.district+' ✦',{fontFamily:'Georgia',fontSize:'18px',color:'#ebca90'}).setOrigin(.5);
-    this.add.text(W/2,52,'DIA '+state.day+' · RODADA '+state.round,{fontFamily:'monospace',fontSize:'11px',color:'#d6bfa9'}).setOrigin(.5);
-    this.add.text(103,83,'RESISTÊNCIA',{fontFamily:'monospace',fontSize:'11px',color:'#98cbb7'}).setOrigin(.5);
-    this.add.text(319,83,'CORTE',{fontFamily:'monospace',fontSize:'11px',color:'#d59c9a'}).setOrigin(.5);
-    const selection=state.selected,acted=state.acted||[];
+    g.fillStyle(0x293b45).fillRect(0,245,W,45);
+    g.fillStyle(0x3b4246).fillRect(0,290,W,76);
+    for(let y=303;y<366;y+=19){g.lineStyle(1,0x65605a,.65).lineBetween(0,y,W,y);}
+    g.lineStyle(2,0x947459,.8).strokeRect(7,7,W-14,359);
+    g.lineStyle(1,0x806b57,.8).lineBetween(210,91,210,343);
+    this.add.text(210,23,'✦ '+state.district+' ✦',{fontFamily:'Georgia',fontSize:'19px',color:'#efd09a'}).setOrigin(.5);
+    this.add.text(210,50,'DIA '+state.day+'  ·  RODADA '+state.round,{fontFamily:'monospace',fontSize:'11px',color:'#d1bb9d'}).setOrigin(.5);
+    this.add.text(103,78,'A RESISTÊNCIA',{fontFamily:'monospace',fontSize:'10px',color:'#98ceb0'}).setOrigin(.5);
+    this.add.text(317,78,'A CORTE',{fontFamily:'monospace',fontSize:'10px',color:'#e1a6ac'}).setOrigin(.5);
+    const acted=state.acted||[];
+    function figure(scene,u,enemy,x,y,selected){
+      const c=scene.add.container(x,y);
+      const skin=enemy?0xd3b7a6:0xdcb99a,cloth=enemy?0x825464:(u.id==='coto'?0x598378:u.id==='marga'?0x937a56:u.id==='iria'?0x596e84:0x6b7f73);
+      const dark=enemy?0x342735:0x283b3a;
+      const pix=(px,py,w,h,color)=>scene.add.rectangle(px,py,w,h,color).setOrigin(0,0);
+      const shadow=scene.add.ellipse(0,8,56,11,0x080e14,.55);
+      const pieces=[shadow];
+      // 8-bit-inspired fighter silhouette: boots, legs, tunic, arms, neck, face, hair / helmet.
+      pieces.push(pix(-17,-13,13,22,dark),pix(5,-13,13,22,dark));
+      pieces.push(pix(-25,-49,50,37,cloth));
+      pieces.push(pix(-31,-43,8,29,dark),pix(23,-43,8,29,dark));
+      pieces.push(pix(-10,-56,20,8,skin),pix(-16,-79,32,26,skin));
+      pieces.push(pix(-18,-83,36,9,enemy?0x55515d:u.id==='marga'?0xa39a70:0x493b32));
+      pieces.push(pix(enemy?-10:3,-68,7,3,0x211f25));
+      if(enemy){pieces.push(pix(-22,-84,44,5,0x8c92a0),pix(26,-48,6,45,0xb4af9c));}
+      else if(u.id==='coto'){pieces.push(pix(30,-44,5,55,0xc2c0a8),pix(24,-38,17,6,0x98794f));}
+      else if(u.id==='marga'){pieces.push(pix(-35,-30,18,13,0xc1ad82),pix(-29,-34,6,5,0xe0d8bd));}
+      else{pieces.push(pix(27,-44,5,34,0xaeb5ae));}
+      if(!u.hp){const grey=scene.add.rectangle(0,-37,66,96,0x141820,.58);pieces.push(grey);}
+      c.add(pieces);
+      if(selected){const ring=scene.add.ellipse(0,12,71,16).setStrokeStyle(3,0xf4d388);c.add(ring);}
+      const max=Math.max(1,u.maxhp);
+      const hp=scene.add.rectangle(0,21,100,8,0x412c35);
+      const fg=scene.add.rectangle(-50,21,100*Math.max(0,Math.min(1,u.hp/max)),8,enemy?0xd1767c:0x88c7a0).setOrigin(0,.5);
+      const text=scene.add.text(0,34,u.name.length>22?u.name.slice(0,21)+'…':u.name,{fontFamily:'monospace',fontSize:'11px',color:'#f5e9d8',align:'center'}).setOrigin(.5);
+      const stat=scene.add.text(0,47,u.hp+'/'+u.maxhp+' PV'+(enemy?'':' · '+u.mp+' F'),{fontFamily:'monospace',fontSize:'10px',color:'#e5d2b5'}).setOrigin(.5);
+      c.add([hp,fg,text,stat]);
+      if(u.guard)c.add(scene.add.text(-45,-93,'⬡',{fontFamily:'monospace',fontSize:'17px',color:'#d2e0ff'}));
+      if(!enemy&&acted.includes(u.id))c.add(scene.add.text(32,-93,'✓',{fontFamily:'monospace',fontSize:'17px',color:'#f5cc76'}));
+      if(u.ward)c.add(scene.add.text(0,-98,'✧ SELO',{fontFamily:'monospace',fontSize:'10px',color:'#e2baff'}).setOrigin(.5));
+      const hit=scene.add.zone(x,y-20,145,142).setInteractive({useHandCursor:true});
+      hit.on('pointerdown',()=>{if(u.hp<=0)return;window.RevoltBattleBridge.command((enemy?'targetE:':'selectHero:')+u.id)});
+      if(selected){scene.tweens.add({targets:c,y:y-4,duration:450,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});}
+    }
+    // Two clearly separated columns, max four fighters each, no overlapping labels.
     const draw=(units,enemy)=>{
-     const gap=Math.min(82,295/Math.max(units.length,1));
-     units.forEach((u,i)=>{
-      const x=enemy?313:104,y=143+i*gap;
-      const live=u.hp>0,selected=selection===(enemy?'e':'h')+u.id;
-      const ctr=this.add.container(x,y);
-      const shadow=this.add.ellipse(0,27,65,14,0x0c1119,.45);
-      const body=this.add.rectangle(0,-3,43,51,live?(enemy?0x7d5363:0x678f83):0x424650);
-      body.setStrokeStyle(selected?4:2,selected?0xffd987:0x191e2a);
-      const face=this.add.rectangle(0,-38,27,24,live?0xd3b89b:0x777778);
-      const eye=this.add.rectangle(0,-39,15,3,0x20232a);
-      const bar=this.add.rectangle(0,37,75,9,0x472e35);
-      const hp=this.add.rectangle(-37.5,37,75*Math.max(0,Math.min(1,u.hp/Math.max(1,u.maxhp))),9,enemy?0xd36e77:0x8ccaab).setOrigin(0,.5);
-      const label=this.add.text(0,49,(u.name||'').length>23?u.name.slice(0,22)+'…':u.name,{fontFamily:'monospace',fontSize:'10px',color:live?'#f0e4d3':'#aaa7a7'}).setOrigin(.5);
-      const count=this.add.text(0,64,u.hp+'/'+u.maxhp+' PV'+(!enemy?' · '+u.mp+' F':''),{fontFamily:'monospace',fontSize:'10px',color:'#e7d6ba'}).setOrigin(.5);
-      ctr.add([shadow,body,face,eye,bar,hp,label,count]);
-      if(!enemy&&acted.includes(u.id)){const dot=this.add.text(25,-57,'✓',{fontFamily:'monospace',fontSize:'17px',color:'#e5c37c'});ctr.add(dot);}
-      if(u.guard){const shield=this.add.text(-32,-57,'⬡',{fontFamily:'monospace',fontSize:'17px',color:'#acc9f6'});ctr.add(shield);}
-      if(enemy&&u.ward){ctr.add(this.add.text(0,-66,'✧ SELO FEÉRICO',{fontFamily:'monospace',fontSize:'9px',color:'#d8afff'}).setOrigin(.5));}
-      const hot=this.add.zone(x,y,94,Math.min(80,gap)).setInteractive({useHandCursor:true});
-      hot.on('pointerdown',()=>{if(!live)return;window.RevoltBattleBridge.command((enemy?'targetE:':'selectHero:')+u.id)});
-      if(live&&selected)this.tweens.add({targets:ctr,y:y-5,duration:360,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
-     });
+      const n=units.length;
+      const ys=n<=2?(n===1?[204]:[176,290]):n===3?[149,246,343]:[138,216,294,365];
+      units.forEach((u,i)=>figure(this,u,enemy,enemy?316:104,ys[i]||204,state.selected===(enemy?'e':'h')+u.id));
     };
     draw(state.heroes,false);draw(state.enemies,true);
-    const prompt=state.targetMode==='ataque'||state.targetMode==='skillEnemy'?'SELECIONE UM INIMIGO':state.targetMode==='heal'||state.targetMode==='potionAlly'?'SELECIONE UM ALIADO':'TOQUE EM UM COMBATENTE PARA SELECIONAR';
-    this.add.text(W/2,441,prompt,{fontFamily:'monospace',fontSize:'12px',color:'#efc783'}).setOrigin(.5);
+    g.fillStyle(0x131f2a).fillRect(0,370,W,150);
+    g.lineStyle(2,0x957659).lineBetween(0,370,W,370);
+    const targetEnemy=state.targetMode==='ataque'||state.targetMode==='skillEnemy';
+    const targetAlly=state.targetMode==='heal'||state.targetMode==='potionAlly';
+    const hint=targetEnemy?'TOQUE EM UM INIMIGO':targetAlly?'TOQUE EM UM ALIADO':'SELECIONE UM COMBATENTE';
+    this.add.text(W/2,386,hint,{fontFamily:'monospace',fontSize:'12px',color:'#ebc68c'}).setOrigin(.5);
     const selected=state.selected?.startsWith('h')?state.heroes.find(h=>'h'+h.id===state.selected):null;
-    const canAct=selected&&selected.hp>0&&!acted.includes(selected.id);
+    const canAct=!!selected&&selected.hp>0&&!acted.includes(selected.id);
     const waiting=state.heroes.some(h=>h.hp>0&&!acted.includes(h.id));
-    const aiming=!!state.targetMode;
-    const control=(x,y,w,label,action,enabled=true,accent=false)=>{
-      const bg=this.add.rectangle(x,y,w,38,enabled?(accent?0x755339:0x344a50):0x2a3036).setStrokeStyle(2,enabled?0xc4a477:0x565a60);
-      this.add.text(x,y,label,{fontFamily:'monospace',fontSize:'13px',color:enabled?'#f8e6c4':'#888b8d'}).setOrigin(.5);
-      if(enabled)bg.setInteractive({useHandCursor:true}).on('pointerdown',()=>window.RevoltBattleBridge.command(action));
+    const button=(x,y,w,label,command,enabled,accent=false)=>{
+      const r=this.add.rectangle(x,y,w,34,enabled?(accent?0x725239:0x2d4951):0x27313b).setStrokeStyle(2,enabled?0xb89769:0x4e5861);
+      this.add.text(x,y,label,{fontFamily:'monospace',fontSize:'11px',color:enabled?'#f6e7cb':'#8b9497'}).setOrigin(.5);
+      if(enabled)r.setInteractive({useHandCursor:true}).on('pointerdown',()=>window.RevoltBattleBridge.command(command));
     };
-    if(aiming){
-      control(210,491,348,'✕ CANCELAR ALVO','cancelTarget',true);
-    }else{
-      control(109,481,194,'⚔ ATACAR','attack',!!canAct,true);
-      control(311,481,194,'✦ HABILIDADE (8)','skill',!!canAct&&selected.mp>=8);
-      control(109,530,194,'✚ CURATIVO ('+state.herbs+')','potion',!!canAct&&state.herbs>0);
-      control(311,530,194,'⬡ DEFENDER','defend',!!canAct);
+    if(state.targetMode){button(210,424,385,'✕ CANCELAR ALVO','cancelTarget',true);}
+    else{
+      button(109,416,193,'⚔ ATACAR','attack',canAct,true);
+      button(311,416,193,'✦ HABILIDADE','skill',canAct&&selected.mp>=8);
+      button(109,454,193,'✚ CURATIVO ('+state.herbs+')','potion',canAct&&state.herbs>0);
+      button(311,454,193,'⬡ DEFENDER','defend',canAct);
     }
-    control(210,592,390,'ENCERRAR RODADA · VEZ DA CORTE','enemyTurn',!waiting);
-    this.add.text(W/2,626,'AUXÍLIOS SOBRENATURAIS E REGISTRO ABAIXO',{fontFamily:'monospace',fontSize:'10px',color:'#c8b294'}).setOrigin(.5);
+    button(210,497,397,'ENCERRAR RODADA · VEZ DA CORTE','enemyTurn',!waiting);
     this.game.events.once('postrender',()=>{
       if(my!==token||!root.isConnected)return;
       const canvas=this.game.canvas;
       if(canvas&&canvas.isConnected&&canvas.width>0&&canvas.height>0){
-       root.classList.remove('phaser-loading');
-       root.classList.add('phaser-ready');
+        root.classList.remove('phaser-loading');root.classList.add('phaser-ready');
       }
     });
    }
