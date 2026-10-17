@@ -11,6 +11,7 @@ function play(scene,options){
   const aAfter=after.units.find(u=>u.id===options.attackerId);
   if(!a||!d||!dAfter||!aAfter){options.onDone();return;}
   const kind=options.kind||'attack';
+  const fatal=kind==='attack'&&d.hp>0&&dAfter.hp<=0;
   const lost=Math.max(0,d.hp-dAfter.hp),counter=Math.max(0,a.hp-aAfter.hp);
   const viewportHeight=scene.scale.height;
   const blocker=scene.add.zone(W/2,viewportHeight/2,W,viewportHeight).setDepth(1999).setInteractive();
@@ -25,7 +26,7 @@ function play(scene,options){
   rect(210,viewportHeight/2,W,viewportHeight,0x080b12,.9);
   rect(210,229,406,310,0x101d2a).setStrokeStyle(3,0xd1a56c);
   rect(210,95,396,34,0x25303b);
-  text(210,95,kind==='heal'?'✚ CURA ✚':kind==='guard'?'⬡ PROTEÇÃO ⬡':'✦ CONFRONTO ✦',16,'#f5cc8c');
+  text(210,95,kind==='heal'?'✚ CURA ✚':kind==='guard'?'⬡ PROTEÇÃO ⬡':fatal?'✦ GOLPE FINAL ✦':'✦ CONFRONTO ✦',16,fatal?'#f19c8c':'#f5cc8c');
   if(options.sequenceTotal>1)text(210,118,'EVENTO '+options.sequencePosition+' / '+options.sequenceTotal,10,'#b4d9da');
   rect(210,360,396,35,0x26343d);
   const eventTitle=text(210,359,'PREPARANDO O GOLPE',11,'#e9d0a2');
@@ -153,7 +154,16 @@ function play(scene,options){
     scene.tweens.add({targets:defender.c,x:xDef+(allyLeft?14:-14),duration:90,yoyo:true});
     updateBar(dFill,dVal,xDef,dAfter.hp,d.maxhp,lost);
     eventTitle.setText('−'+lost+' PV · '+d.name);
-    if(dAfter.hp<=0)scene.tweens.add({targets:defender.c,alpha:.28,duration:400,delay:270});
+    if(fatal){
+      delay(190,()=>{
+        eventTitle.setText(d.name+' FOI DERROTADO');
+        const burst=add(scene.add.star(xDef,239,8,24,78,0xc95c62,.42));
+        const crest=text(xDef,214,'✕',47,'#ffd6bf');
+        scene.tweens.add({targets:burst,scale:2.2,alpha:0,duration:570,onComplete:()=>burst.destroy()});
+        scene.tweens.add({targets:crest,y:170,alpha:0,duration:650,onComplete:()=>crest.destroy()});
+        scene.tweens.add({targets:defender.c,alpha:0,y:yChar+28,scale:.8,duration:560,ease:'Quad.easeIn'});
+      });
+    }
   });
   let endTime=1150;
   if(counter>0&&dAfter.hp>0){
@@ -170,7 +180,7 @@ function play(scene,options){
       if(aAfter.hp<=0)scene.tweens.add({targets:attacker.c,alpha:.25,duration:330});
     });
     endTime=2200;
-  }else endTime=1550;
+  }else endTime=fatal?1910:1550;
   delay(endTime,finish);
 }
 root.RevoltBattlePopup={play};
