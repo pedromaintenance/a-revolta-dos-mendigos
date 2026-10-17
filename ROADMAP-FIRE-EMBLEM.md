@@ -369,3 +369,30 @@ O núcleo `tactical-core.js` foi avaliado em JavaScript em cinco verificações:
 **Limites:** ainda são figuras geométricas, não spritesheets autorais; nenhuma garantia de Phaser offline por depender de CDN. Sintaxe e testes de contrato não substituem teste visual real. O roadmap de Fire Emblem ainda precisa concluir movimento em grade na campanha principal, arte definitiva e cenários.
 
 **Próxima prioridade:** incorporar teste de navegador automatizado e melhorar o estado visual dos ataques, evitando descompasso de PV quando uma sequência longa termina.
+
+## Entrega T2.9 — combatentes pixelados procedurais nos cut-ins (17/10/2026)
+
+**Versão:** v15, publicada na branch `main`.
+
+### Implementado
+- `battle-popup.js`: os bonecos geométricos do cut-in foram substituídos por personagens procedurais de pixel-art desenhados em grade rígida de 4 px sobre Phaser Graphics. Os sprites são criados localmente em tempo de execução, sem novas bibliotecas ou URLs de imagens.
+- Silhuetas agora têm rosto, cabelos/capacete, túnica, botas, braços, cinto, equipamentos e paletas diferenciadas conforme o papel inferido do nome/ID (Corte, combatentes, cavaleiros/guardas, curandeiros/bardos, conjuradores). A arma agora é um conjunto que gira com o golpe; cajado é usado em classes mágicas/curativas, espada nas demais.
+- Mantida a lógica de animação de ataque, dano, contra-ataque, cura e proteção das versões anteriores. Não houve alteração na regra canônica de combate, progresso, XP ou formato de save.
+- `tests/cinematic-contract.test.js`: contrato ampliado para garantir existência de paletas de classe, Phaser Graphics local e animação de equipamento.
+- `index.html` atualizado para `app.js?v=15`, `phaser-battle.js?v=15`, `battle-popup.js?v=15`; `tactical-lab.html` para popup v15 e PWA para `revolta-cache-v15`.
+
+### Escopo e limitações
+- **Não são spritesheets finais:** são personagens pixelados procedurais, com diferenças visuais simples e animações de corpo/arma existentes.
+- A identificação visual da classe é heurística por nomes e IDs; uma ficha visual formal será necessária para personalizar os oito heróis e dezenas de inimigos.
+- Ainda não há frames autorais de caminhada/ataque por classe nem QA visual automatizado.
+- A execução dos testes no GitHub Actions precisa ser consultada na página de workflows; a publicação de commits não é prova de CI verde.
+- A batalha da campanha ainda é de turnos clássicos; grid e movimentação permanecem no laboratório tático.
+
+### Verificação recomendada
+1. Abrir `/tactical-lab.html`, escolher **Ataque + contra-ataque** e verificar silhueta pixelada de Coto e Guarda, incluindo arma articulada.
+2. Alternar entre **Cura**, **Defesa** e **Sequência mista**; conferir contraste, cores, barras de PV e PULAR TUDO.
+3. Na campanha, testar pelo menos um ataque, um curativo e uma defesa para confirmar renderização sem travamentos.
+4. Verificar [GitHub Actions](https://github.com/pedromaintenance/a-revolta-dos-mendigos/actions/workflows/combat-tests.yml) e executar os testes Node antes de declarar a versão estável.
+5. Verificar atualização da versão instalada no celular.
+
+**Próximo marco:** spritesheets próprios por personagem com poses definidas, testes reais de navegador/Android e evolução do grid tático para as batalhas canônicas.
