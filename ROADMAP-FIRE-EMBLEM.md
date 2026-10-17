@@ -184,3 +184,28 @@ Começar com estados pequenos: patrulhar, defender posição, priorizar civil/al
 - [ ] Testar carregamento offline apenas após hospedagem local da engine
 
 **Verificação realizada:** sintaxe JavaScript do popup e do script inline do laboratório analisadas com sucesso; commits confirmados. Teste visual com navegador/Pages ainda pendente.
+
+## Hotfix T2.2 — animação demonstrável sem deslocamento (16/10/2026)
+
+**Relato do jogador:** não conseguiu observar as animações implementadas na T2.1.
+
+**Diagnóstico:** a T2.1 foi integrada exclusivamente em `tactical-lab.html`, não no fluxo das 42 batalhas do jogo principal. No laboratório, a animação só é iniciada após o motor confirmar dano em ataque válido — situação que exige mover Coto até a adjacência ou aguardar a investida inimiga. Isso dificultou encontrar/validar o novo comportamento. **Não foi possível confirmar se há também falha de execução no navegador do jogador.**
+
+### Publicado
+- Adicionado botão **▶ Ver animação** no laboratório tático. Ele monta um combate demonstrativo adjacente e utiliza o próprio `RevoltTactics.dispatch()` para calcular dano e contra-ataque, passando os snapshots antes/depois ao popup Phaser. Não modifica o progresso do mapa nem o save da campanha.
+- Atualizado o texto da página para identificar claramente o modo de demonstração e diferenciar o laboratório do jogo principal.
+- Comandos externos ficam bloqueados enquanto o confronto está aberto; `PULAR` do popup e sua conclusão reabilitam o laboratório.
+- Atualizada URL do script de popup para `battle-popup.js?v=2` para diminuir problemas com cache antigo.
+- Adicionado ao menu da campanha principal link direto **Laboratório tático · Ver animação** para descobrir a funcionalidade sem confundi-la com a batalha antiga.
+- O arquivo `battle-popup.js` ainda é a apresentação cinematográfica da T2.1. Nenhuma mudança nas regras da campanha nem no formato do save.
+
+### Aceitação
+- [ ] Abrir `/tactical-lab.html` e tocar **Ver animação** sem interagir com o mapa
+- [ ] Popup escurece o mapa, desenha dois combatentes ampliados e apresenta golpe + PV e contra-ataque
+- [ ] Botão PULAR retorna ao mapa; o progresso da demonstração não modifica Coto/Guarda do laboratório
+- [ ] Ataques normais continuam abrindo o popup em condições válidas
+- [ ] Verificar Console em caso de popup ausente ou erro durante a execução
+
+**Verificações locais do código:** script inline da página analisado quanto à sintaxe, integração ao popup confirmada e commits no GitHub executados. **Pendente:** teste visual efetivo no GitHub Pages; não declarar bug resolvido sem retorno visual do usuário.
+
+**Próximo passo após QA:** eventos de combate estruturados (incluindo movimento/turno inimigo), spritesheets animadas locais e popup de confronto na batalha canônica apenas quando houver paridade funcional.
