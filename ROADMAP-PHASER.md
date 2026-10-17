@@ -20,7 +20,7 @@ A versão atual é um RPG de estratégia narrativa mobile-first em JavaScript pu
 | M0 — Auditoria | Mapear estado, funções de batalha, interface, persistência e publicação | Documento com arquitetura e riscos | Concluído |
 | M1 — Fundação Phaser | Integrar Phaser 3 com carregamento controlado, canvas responsivo, fallback clássico | Jogo abre no Pages sem regressão e mostra uma cena Phaser de teste | Parcial: laboratório isolado e link no menu; ainda falta engine local e integração embutida |
 | M2 — Visual de batalha | Cenário, combatentes, barras de PV/Foco, seleção visual e efeitos simples | Mesma batalha representada em canvas sem alterar regras | Parcial: canvas embutido com PV/Foco, seleção, guarda e estado de ação; atualização por remontagem entre ações, arte provisória |
-| M3 — Interação | Toque nos alvos, animação de ataques, cura, proteção, efeitos e sincronização | Turno completo jogável via Phaser; mesma resolução do modo clássico | Parcial: seleção de aliados/inimigos no canvas aciona comandos reais; botões de habilidade/ataque/cura/defesa continuam em HTML; animações de golpes pendentes |
+| M3 — Interação | Toque nos alvos, animação de ataques, cura, proteção, efeitos e sincronização | Turno completo jogável via Phaser; mesma resolução do modo clássico | Parcial avançado: seleção e cinco comandos diretamente no canvas (ataque/habilidade/curativo/defesa/fim da rodada); suporte sobrenatural e histórico ainda em HTML, animações de golpes pendentes |
 | M4 — Direção de arte | Pixel art autoral, cenários por ato, spritesheets e efeitos | Assets locais e visual consistente, sem dependência de CDN | Pendente |
 | M5 — UX | Acessibilidade, feedback, áudio opcional, escala e otimização | Android e desktop, teclado/toque, desempenho aceitável | Pendente |
 | M6 — PWA/QA | Cache de engine/assets, migração de saves, testes e release | Pages instalável, offline testado e regressões resolvidas | Pendente |
@@ -110,3 +110,21 @@ Evitar que cenas Phaser alterem diretamente `localStorage` ou a estrutura do sav
 - Testar uma batalha salva, reload e resolução sem perda do save.
 
 **Validação declarada:** código integrado e enviado ao GitHub. **Não houve teste automatizado de navegador, teste offline nem confirmação visual da implantação no Pages**; nenhuma dessas atividades é marcada como aprovada ainda.
+
+## Entrega de 16/10/2026 — comandos de batalha dentro do canvas Phaser (M3)
+
+A cena integrada `phaser-battle.js` tem agora **HUD Phaser interativo** de 420×650 (FIT responsivo). Os cinco comandos **Atacar, Habilidade, Curativo, Defender e Encerrar rodada** operam diretamente dentro do canvas. Quando o motor aguarda alvo, o HUD troca as ações por **Cancelar alvo** e indica se espera aliado ou inimigo.
+
+- Botões desabilitados quando o personagem já agiu, está incapacitado, não possui Foco suficiente ou há falta de ervas; a ação de encerrar rodada permanece bloqueada enquanto alguém ainda pode agir.
+- `RevoltBattleBridge.snapshot()` passou a incluir quantidade atual de ervas, além dos dados reais de heróis, inimigos e rodada.
+- Não houve criação de segundo motor de dano, cura ou economia: cada toque chama `RevoltBattleBridge.command()` → `doAction()` do `app.js`.
+- Os botões HTML permanecem como **fallback operacional** por ora; auxílios sobrenaturais e log seguem em HTML. Não desativar até que paridade seja testada.
+- Visual ainda provisório; ao executar comandos, o canvas é remontado. Atualização incremental, efeitos, sprites e motor Phaser local continuam no backlog.
+
+### Aceitação recomendada para este marco
+1. Abrir o **jogo principal** no Pages, iniciar uma batalha e aguardar carregar o canvas.
+2. Tocar em Coto, apertar **ATACAR** dentro do canvas, tocar no Guarda, observar atualização do PV e do log; testar **DEFENDER** e **ENCERRAR RODADA**.
+3. Em uma batalha com Marga/Olmo, verificar habilidades de cura imediata; testar curativo escolhendo um aliado; confirmar bloqueio quando não houver 8 pontos de Foco ou ervas.
+4. Confirmar que os controles de suporte especial seguem disponíveis abaixo do canvas, que uma vitória leva ao pós-batalha e que a campanha pode continuar.
+
+**Verificação efetuada:** sintaxe JavaScript analisada e commits confirmados no GitHub. **Ainda não confirmado:** renderização real no dispositivo, desempenho e atualização do Pages. Não considerar M3 concluído até concluir QA do fluxo completo.
