@@ -30,7 +30,7 @@ test('main release and service worker share version',()=>{
 test('rules engine queues all three event kinds',()=>{
  assert.ok(app.includes("queueBattleSupport('heal'"));
  assert.ok(app.includes("queueBattleSupport('guard'"));
- assert.ok(app.includes('battleVisualEvents.push({attackerBefore:source'));
+ assert.ok(app.includes("battleVisualEvents.push({kind:'attack',ability,attackerBefore:source"));
  assert.ok(app.includes("if(started)battleVisualEvents.splice(0,events.length)"));
 });
 test('renderer passes event kind, keeps skip controls',()=>{
