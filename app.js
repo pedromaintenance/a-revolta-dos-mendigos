@@ -77,8 +77,17 @@ function livingEnemies(){return S.battle.enemies.filter(x=>x.hp>0)}
 function livingParty(){return S.battle.heroes.map(id=>getHero(id)).filter(h=>h.alive&&h.hp>0)}
 function playPendingBattleFX(after){
  if(!battleVisualEvents.length)return false;
- const events=battleVisualEvents.splice(0);
- return !!window.PhaserBattle?.playEvents?.(events,after);
+ // Keep the queue intact if another cinematic is still running.
+ if(window.PhaserBattle?.isBusy?.())return true;
+ if(!window.PhaserBattle?.canPresent?.()){
+  // Phaser is unavailable: never hold up the canonical campaign.
+  battleVisualEvents.length=0;
+  return false;
+ }
+ const events=battleVisualEvents.slice();
+ const started=!!window.PhaserBattle.playEvents(events,after);
+ if(started)battleVisualEvents.splice(0,events.length);
+ return started;
 }
 function battleScreen(){let b=S.battle,d=daily();
  if($('phaser-battle')&&document.querySelector('#stage .combat')){
