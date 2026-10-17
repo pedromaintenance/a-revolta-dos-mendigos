@@ -67,3 +67,10 @@ test('pixel cut-in uses local palette and distinct equipment',()=>{
  assert.ok(popup.includes('const weapon=scene.add.container('));
  assert.ok(popup.includes('targets:attacker.weapon'));
 });
+
+test('finisher and enemy cinematic previews are available',()=>{
+ for(const option of ['finisher','enemy'])assert.ok(lab.includes('value="'+option+'"'));
+ assert.ok(popup.includes("fatal=kind==='attack'"));
+ assert.ok(popup.includes("'✦ GOLPE FINAL ✦'"));
+ assert.ok(popup.includes('FOI DERROTADO'));
+});
