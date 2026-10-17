@@ -13,8 +13,8 @@ function mount(){
   const root=document.getElementById('phaser-battle');
   const state=window.RevoltBattleBridge.snapshot();
   if(!state||!state.enemies||!state.heroes)return;
-  const W=420,H=460;
-  const palette=['#77b0a4','#b99a69','#9d8fc1','#b2a3bd'];
+  const W=420,H=650;
+  
   class Battle extends Phaser.Scene{
    constructor(){super({key:'battle'});}
    create(){
@@ -27,7 +27,7 @@ function mount(){
      g.fillStyle(i%2?0x39404b:0x333c49).fillRect(x,y,32,148);
      g.fillStyle(0x101923).fillRect(x+10,y+22,12,18);
     }
-    g.fillStyle(0x443f3d).fillRect(0,258,W,202);
+    g.fillStyle(0x443f3d).fillRect(0,258,W,392);
     for(let y=266;y<H;y+=20){g.lineStyle(1,0x5d5147,.65).lineBetween(0,y,W,y);}
     g.lineStyle(2,0x97735b,.7).strokeRect(8,8,W-16,H-16);
     this.add.text(W/2,22,'✦ '+state.district+' ✦',{fontFamily:'Georgia',fontSize:'18px',color:'#ebca90'}).setOrigin(.5);
@@ -60,7 +60,27 @@ function mount(){
      });
     };
     draw(state.heroes,false);draw(state.enemies,true);
-    this.add.text(W/2,436,'TOQUE EM UM COMBATENTE PARA SELECIONAR',{fontFamily:'monospace',fontSize:'10px',color:'#e0ba7f'}).setOrigin(.5);
+    const prompt=state.targetMode==='ataque'||state.targetMode==='skillEnemy'?'SELECIONE UM INIMIGO':state.targetMode==='heal'||state.targetMode==='potionAlly'?'SELECIONE UM ALIADO':'TOQUE EM UM COMBATENTE PARA SELECIONAR';
+    this.add.text(W/2,441,prompt,{fontFamily:'monospace',fontSize:'12px',color:'#efc783'}).setOrigin(.5);
+    const selected=state.selected?.startsWith('h')?state.heroes.find(h=>'h'+h.id===state.selected):null;
+    const canAct=selected&&selected.hp>0&&!acted.includes(selected.id);
+    const waiting=state.heroes.some(h=>h.hp>0&&!acted.includes(h.id));
+    const aiming=!!state.targetMode;
+    const control=(x,y,w,label,action,enabled=true,accent=false)=>{
+      const bg=this.add.rectangle(x,y,w,38,enabled?(accent?0x755339:0x344a50):0x2a3036).setStrokeStyle(2,enabled?0xc4a477:0x565a60);
+      this.add.text(x,y,label,{fontFamily:'monospace',fontSize:'13px',color:enabled?'#f8e6c4':'#888b8d'}).setOrigin(.5);
+      if(enabled)bg.setInteractive({useHandCursor:true}).on('pointerdown',()=>window.RevoltBattleBridge.command(action));
+    };
+    if(aiming){
+      control(210,491,348,'✕ CANCELAR ALVO','cancelTarget',true);
+    }else{
+      control(109,481,194,'⚔ ATACAR','attack',!!canAct,true);
+      control(311,481,194,'✦ HABILIDADE (8)','skill',!!canAct&&selected.mp>=8);
+      control(109,530,194,'✚ CURATIVO ('+state.herbs+')','potion',!!canAct&&state.herbs>0);
+      control(311,530,194,'⬡ DEFENDER','defend',!!canAct);
+    }
+    control(210,592,390,'ENCERRAR RODADA · VEZ DA CORTE','enemyTurn',!waiting);
+    this.add.text(W/2,626,'AUXÍLIOS SOBRENATURAIS E REGISTRO ABAIXO',{fontFamily:'monospace',fontSize:'10px',color:'#c8b294'}).setOrigin(.5);
     root.classList.add('phaser-ready');
    }
   }
