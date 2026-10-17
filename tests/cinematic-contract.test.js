@@ -95,3 +95,11 @@ test('weapon animation timing and effects remain defined',()=>{
  assert.ok(popup.includes('endTime=impact+'));
  assert.ok(popup.includes('targets:attacker.weapon'));
 });
+
+test('arcane cinematics use distinct cast and impact motifs',()=>{
+ assert.ok(lab.includes('value="arcana"'));
+ assert.ok(lab.includes("['vega','olmo','marga']"));
+ for(const type of ['embers','chorus','blessing'])assert.ok(popup.includes("'"+type+"'"));
+ assert.ok(popup.includes("magicMotif(xAtt,yChar-76,'cast')"));
+ assert.ok(popup.includes("magicMotif(xDef,241,'hit')"));
+});
