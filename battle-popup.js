@@ -30,14 +30,54 @@ function play(scene,options){
   rect(210,360,396,35,0x26343d);
   const eventTitle=text(210,359,'PREPARANDO O GOLPE',11,'#e9d0a2');
   const allyLeft=a.side==='ally',xAtt=allyLeft?113:305,xDef=allyLeft?307:111,yChar=244;
+  // Local procedural pixel sprites: 20x30 pixels ×4. No remote character images.
   function makeFighter(u,x,faceRight){
     const c=add(scene.add.container(x,yChar));
-    const side=u.side==='ally';
-    const coat=side?0x628c7d:0x935c67;
-    c.add([scene.add.ellipse(0,34,95,17,0x010911,.52),scene.add.rectangle(-14,16,20,38,0x26303b),scene.add.rectangle(14,16,20,38,0x26303b),scene.add.rectangle(0,-18,67,72,coat).setStrokeStyle(4,0x252430),scene.add.rectangle(0,-82,47,53,0xd5ac90),scene.add.rectangle(0,-109,52,13,side?0x674b38:0x525868)]);
-    const eye=scene.add.rectangle(faceRight?11:-11,-84,10,5,0x28222b);c.add(eye);
-    const weapon=scene.add.rectangle(faceRight?46:-46,-15,7,101,0xd4cbb3).setRotation(faceRight?.18:-.18);
+    const id=String(u.id||'').toLowerCase(),name=String(u.name||'').toLowerCase();
+    const court=u.side==='enemy';
+    const healer=/marga|olmo|curand|bardo|sacerdot/.test(id+' '+name);
+    const knight=/lorena|cavaleir|inquisidor|guarda|lanceir|paladino/.test(id+' '+name);
+    const caster=/vega|bruxa|feiticeir|arauto/.test(id+' '+name);
+    const color=court?0x884e61:healer?0x657f6b:caster?0x665a90:knight?0x718790:0x567b75;
+    const shade=court?0x573343:healer?0x394f44:caster?0x423b64:knight?0x415560:0x314b48;
+    const trim=court?0xd4a39d:healer?0xd8c489:caster?0xb8a6de:0xc6b78e;
+    const sprite=scene.add.graphics();
+    // All coordinates lie on a 4px grid to keep the pixel silhouette crisp.
+    const p=(px,py,w,h,fill)=>{sprite.fillStyle(fill,1);sprite.fillRect((px-10)*4,(py-27)*4,w*4,h*4);};
+    p(4,26,12,2,0x17222a);          // contact shadow
+    p(5,21,4,6,0x303b42);p(11,21,4,6,0x303b42);
+    p(4,24,5,2,0x252c35);p(11,24,5,2,0x252c35);
+    p(4,11,12,12,shade);            // cloak silhouette
+    p(5,12,10,10,color);
+    p(7,15,6,5,trim);               // tunic plate
+    p(5,20,10,2,shade);p(9,19,2,3,0x4a3637); // belt
+    p(3,12,3,9,shade);p(14,12,3,9,shade); // arms
+    p(3,19,3,2,0xd4ad8f);p(14,19,3,2,0xd4ad8f);
+    p(6,4,8,9,0xe0b796);           // face
+    p(5,3,10,4,court?0x45404c:0x503a36);
+    p(6,2,8,2,court?0x626675:0x705046);
+    p(faceRight?12:7,9,2,1,0x242c35); // visible eye
+    p(8,12,4,2,shade);             // collar
+    if(knight){p(5,3,10,3,0x6e8290);p(4,5,2,7,0x8797a0);p(14,5,2,7,0x8797a0);p(7,15,6,3,0xb2b5b6);}
+    if(healer){p(4,4,12,3,0xd1be82);p(8,15,4,1,0xf4df9b);p(9,13,2,5,0xf4df9b);}
+    if(caster){p(4,4,12,2,0x7866ab);p(7,1,6,3,0x594b87);p(6,18,8,2,0x9080bc);}
+    if(court){p(4,11,12,2,0x9a6b70);p(8,16,4,2,0xb46b6e);}
+    c.add(sprite);
+    const equipped=healer||caster?0xc9a477:0xe2d6bf;
+    // The weapon rotates around the hand, with a distinct hilt/edge silhouette.
+    const pivot=faceRight?37:-37;
+    const weapon=scene.add.container(pivot,-16);
+    const shaft=scene.add.rectangle(0,-30,healer||caster?9:8,healer||caster?85:89,equipped);
+    const grip=scene.add.rectangle(0,9,13,17,0x473b3a);
+    weapon.add([shaft,grip]);
+    if(!healer&&!caster){
+      weapon.add(scene.add.rectangle(0,-3,34,7,0xb3a4a1));
+      weapon.add(scene.add.triangle(0,-79,-5,9,5,9,0,0,0xf7edda));
+    }else{
+      weapon.add(scene.add.circle(0,-74,12,caster?0xb59cdb:0x8bcdaa));
+    }
     c.add(weapon);
+    c.add(scene.add.ellipse(0,25,90,12,0x050c12,.35).setDepth(-1));
     return {c,weapon};
   }
   const attacker=makeFighter(a,xAtt,allyLeft),defender=makeFighter(d,xDef,!allyLeft);
