@@ -128,3 +128,21 @@ A cena integrada `phaser-battle.js` tem agora **HUD Phaser interativo** de 420×
 4. Confirmar que os controles de suporte especial seguem disponíveis abaixo do canvas, que uma vitória leva ao pós-batalha e que a campanha pode continuar.
 
 **Verificação efetuada:** sintaxe JavaScript analisada e commits confirmados no GitHub. **Ainda não confirmado:** renderização real no dispositivo, desempenho e atualização do Pages. Não considerar M3 concluído até concluir QA do fluxo completo.
+
+## Hotfix — campo Phaser invisível e cache desatualizado (16/10/2026)
+
+**Relato:** ao entrar na batalha, os gráficos do Phaser não apareciam.
+
+**Causa identificada no código:** o elemento `#phaser-battle` tinha `display:none` antes da criação do `Phaser.Game`. A configuração `Phaser.Scale.FIT` precisa medir o pai; entretanto, a classe que o tornaria visível (`phaser-ready`) era adicionada somente no `Scene.create()`. Essa dependência circular podia impedir uma cena válida de aparecer. Não foi possível coletar o console do navegador do usuário para confirmar se havia outro erro adicional.
+
+**Correções aplicadas ao `main`:**
+- Contêiner visível e com área mensurável durante a criação do motor; proporção `420/650` e espaço reservado para o FIT.
+- Estados `phaser-loading` e `phaser-ready`; retratos clássicos só são escondidos quando o Phaser entra em `create()`. Falha de CDN passa a exibir aviso mantendo controles clássicos.
+- `sw.js` substituído por service worker versionado `revolta-cache-v2`; arquivos essenciais são pré-armazenados e documentos/scripts consultam a rede primeiro, com fallback ao cache.
+- `app.js` verifica o cache v2; `index.html` usa `?v=2` nos scripts modificados para reduzir o risco de versões misturadas.
+
+**Escopo:** hotfix de inicialização e atualização; não muda save v1, cálculos do combate, narrativa nem atributos. Phaser continua no CDN e portanto **não há garantia de combate Phaser offline** (modo clássico como fallback).
+
+**QA executado:** conferência das mudanças no GitHub e validação de sintaxe de `app.js`, `phaser-battle.js` e `sw.js`. **Pendente:** teste real em Chrome Android/desktop, verificação do SW instalado, confirmação de tela Phaser e publicação efetiva no Pages. O relato não deve ser marcado como solucionado definitivamente sem esse retorno.
+
+**Teste solicitado:** abrir a campanha no Pages, entrar numa batalha; verificar o campo gráfico e os botões dentro do canvas; se persistir a versão antiga, recarregar a página conectada à internet e fechar/reabrir o PWA para ativar o cache v2. Se houver falha, observar o aviso textual e confirmar que os botões clássicos permanecem funcionais.
