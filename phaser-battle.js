@@ -1,14 +1,14 @@
 /* Phaser combat viewport — the original app.js remains the sole rules engine. */
 (function(){
 'use strict';
-let game=null,token=0,loading=null,lastSnapshot=null;
+let game=null,token=0,loading=null,lastSnapshot=null,visualBusy=false;
 const KENNEY='https://raw.githubusercontent.com/Two-Weeks-Team/openClawWorld/main/packages/client/public/assets/kenney/characters/characters_spritesheet.png';
 const SCRIPT='https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js';
 function engine(){if(window.Phaser)return Promise.resolve(true);if(loading)return loading;loading=new Promise(resolve=>{const s=document.createElement('script');s.src=SCRIPT;s.onload=()=>resolve(!!window.Phaser);s.onerror=()=>resolve(false);document.head.append(s)});return loading}
-function destroy(){token++;lastSnapshot=null;if(game){try{game.destroy(true)}catch(e){console.warn(e)}game=null}}
+function destroy(){token++;lastSnapshot=null;visualBusy=false;if(game){try{game.destroy(true)}catch(e){console.warn(e)}game=null}}
 function refresh(){
  if(!game||!game.scene)return;
- try{const scene=game.scene.getScene('battle');if(scene&&scene.sys.isActive()&&!scene._duelBusy)scene.scene.restart();}catch(e){console.error('Falha ao atualizar cena Phaser:',e)}
+ try{const scene=game.scene.getScene('battle');if(scene&&scene.sys.isActive()&&!scene._duelBusy&&!visualBusy)scene.scene.restart();}catch(e){console.error('Falha ao atualizar cena Phaser:',e)}
 }
 function mount(){
  const host=document.getElementById('phaser-battle');if(!host||!window.RevoltBattleBridge)return;
@@ -152,35 +152,8 @@ function mount(){
     };
     topRoster(state.enemies,true);topRoster(state.heroes,false);
     draw(state.heroes,false);draw(state.enemies,true);
-    // Main campaign: show a cinematic cut-in for a resolved player attack.
-    // We use HP already resolved by app.js, never invent a counterattack.
-    const attackedEnemy=previous&&previous.day===state.day
-      ?state.enemies.find(u=>{const old=previous.enemies.find(p=>p.id===u.id);return old&&u.hp<old.hp;})
-      :null;
-    const sourceId=previous?.targeting;
-    const sourceBefore=previous?.heroes.find(u=>u.id===sourceId);
-    const defenderBefore=attackedEnemy&&previous.enemies.find(u=>u.id===attackedEnemy.id);
-    const hadAttackIntent=previous&&['ataque','skillEnemy'].includes(previous.targetMode);
-    const cinematic=hadAttackIntent&&sourceBefore&&defenderBefore&&window.RevoltBattlePopup&&attackedEnemy;
-    if(cinematic){
-      const dataBefore={units:[
-        {id:sourceBefore.id,side:'ally',name:sourceBefore.name,hp:sourceBefore.hp,maxhp:sourceBefore.maxhp},
-        {id:'enemy'+defenderBefore.id,side:'enemy',name:defenderBefore.name,hp:defenderBefore.hp,maxhp:defenderBefore.maxhp}
-      ]};
-      const dataAfter={units:[
-        {...dataBefore.units[0]},
-        {...dataBefore.units[1],hp:attackedEnemy.hp}
-      ]};
-      this._duelBusy=true;
-      this.time.delayedCall(50,()=>{
-        if(!this.sys.isActive())return;
-        try{
-          window.RevoltBattlePopup.play(this,{before:dataBefore,after:dataAfter,
-            attackerId:sourceBefore.id,defenderId:'enemy'+defenderBefore.id,
-            onDone:()=>{this._duelBusy=false;}});
-        }catch(error){this._duelBusy=false;console.error('Cut-in da campanha:',error);}
-      });
-    }
+    // V10: visual events come from canonical damage records, not HP diff.
+    const cinematic=false;
     // Transitions are derived from canonical HP changes, never from guessed damage.
     if(previous&&!cinematic){
       // A newly acted hero visibly surges toward the opposing line.
@@ -248,6 +221,29 @@ function mount(){
   try{game=new Phaser.Game({type:Phaser.CANVAS,parent:root,width:W,height:H,transparent:false,backgroundColor:'#16202e',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_HORIZONTALLY},render:{pixelArt:true,antialias:false},scene:[Battle]});}catch(e){root.classList.remove('phaser-ready','phaser-loading');root.textContent='Erro no Phaser; controles clássicos disponíveis.';game=null;console.error('Phaser combat fallback:',e)}
  });
 }
-function isBusy(){try{return !!(game&&game.scene&&game.scene.getScene('battle')?._duelBusy)}catch(e){return false}}
-window.PhaserBattle={mount,destroy,refresh,isBusy};
+function isBusy(){try{return visualBusy||!!(game&&game.scene&&game.scene.getScene('battle')?._duelBusy)}catch(e){return visualBusy}}
+function canPresent(){
+ try{return !!(game&&window.RevoltBattlePopup&&game.scene&&game.scene.getScene('battle')?.sys.isActive())}catch(e){return false}
+}
+function playEvents(events,onDone){
+ if(!Array.isArray(events)||!events.length||!canPresent()||visualBusy)return false;
+ const scene=game.scene.getScene('battle'),playbackToken=token,queue=events.slice();
+ visualBusy=true;scene._duelBusy=true;let finished=false;
+ const finish=()=>{
+  if(finished)return;finished=true;visualBusy=false;
+  if(scene?.sys?.isActive())scene._duelBusy=false;
+  if(playbackToken===token){try{onDone?.()}catch(e){console.error('Conclusão da fila:',e)}}
+ };
+ const next=()=>{
+  if(playbackToken!==token){finish();return}
+  const event=queue.shift();if(!event){finish();return}
+  try{window.RevoltBattlePopup.play(scene,{
+   before:{units:[event.attackerBefore,event.defenderBefore]},
+   after:{units:[event.attackerAfter,event.defenderAfter]},
+   attackerId:event.attackerBefore.id,defenderId:event.defenderBefore.id,onDone:next
+  });}catch(error){console.error('Erro no evento cinematográfico:',error);next()}
+ };
+ next();return true;
+}
+window.PhaserBattle={mount,destroy,refresh,isBusy,canPresent,playEvents};
 })();
