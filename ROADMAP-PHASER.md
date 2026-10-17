@@ -21,7 +21,7 @@ A versão atual é um RPG de estratégia narrativa mobile-first em JavaScript pu
 | M1 — Fundação Phaser | Integrar Phaser 3 com carregamento controlado, canvas responsivo, fallback clássico | Jogo abre no Pages sem regressão e mostra uma cena Phaser de teste | Parcial: laboratório isolado e link no menu; ainda falta engine local e integração embutida |
 | M2 — Visual de batalha | Cenário, combatentes, barras de PV/Foco, seleção visual e efeitos simples | Mesma batalha representada em canvas sem alterar regras | Parcial: canvas embutido com PV/Foco, seleção, guarda e estado de ação; atualização por remontagem entre ações, arte provisória |
 | M3 — Interação | Toque nos alvos, animação de ataques, cura, proteção, efeitos e sincronização | Turno completo jogável via Phaser; mesma resolução do modo clássico | Parcial avançado: seleção e cinco comandos diretamente no canvas (ataque/habilidade/curativo/defesa/fim da rodada); suporte sobrenatural e histórico ainda em HTML, animações de golpes pendentes |
-| M4 — Direção de arte | Pixel art autoral, cenários por ato, spritesheets e efeitos | Assets locais e visual consistente, sem dependência de CDN | Pendente |
+| M4 — Direção de arte | Pixel art autoral, cenários por ato, spritesheets e efeitos | Assets locais e visual consistente, sem dependência de CDN | Em andamento: silhuetas pixeladas provisórias com equipamentos por personagem; spritesheets e cenários definitivos pendentes |
 | M5 — UX | Acessibilidade, feedback, áudio opcional, escala e otimização | Android e desktop, teclado/toque, desempenho aceitável | Pendente |
 | M6 — PWA/QA | Cache de engine/assets, migração de saves, testes e release | Pages instalável, offline testado e regressões resolvidas | Pendente |
 
@@ -163,3 +163,20 @@ A cena integrada `phaser-battle.js` tem agora **HUD Phaser interativo** de 420×
 **Verificações realizadas:** commits confirmados no GitHub e sintaxe JS do bridge Phaser validada. **Não realizado:** teste automatizado de navegador, comprovação do canvas visível no Pages e teste real do service worker no dispositivo. Não marcar como resolvido até retorno do usuário ou prova de QA.
 
 **Teste:** abrir o Pages com rede, atualizar, entrar na batalha Dia 1. O canvas deve permanecer visível após selecionar Coto e depois ao escolher Atacar → Guarda. Conferir turno inimigo, recarregar campanha salva e verificar se o registro e PV persistem. Se o erro continuar, solicitar mensagem específica do console do navegador e inspecionar eventuais erros de renderização e versão da CDN.
+
+## Entrega visual — arena compacta e legibilidade (17/10/2026)
+
+**Origem:** após confirmar que o Phaser passou a funcionar, o jogador reportou sprites em blocos excessivamente genéricos, nomes sobrepostos aos bonecos, personagens sem apoio no chão e enorme área vazia entre combate e HUD. Registro baseado na captura da batalha do dia 2, `A Tigela de Marga`.
+
+**Publicado em `main`:**
+- Cena reduzida de **420×650 para 420×520**; área de atuação, linha do chão e comandos ficam próximos, sem um vazio central de quase 200 px.
+- Aliados à esquerda e Corte à direita, com régua central e cabeçalhos das facções; fachadas e calçamento com separação visual mais clara.
+- Substituição dos retângulos únicos por silhuetas geométricas **pixel-art provisórias** montadas em Phaser: cabeça/cabelo ou capacete, corpo, braços, botas e acessórios como espada de Coto, panela de Marga e arma dos guardas.
+- PV, Foco e nome exibidos abaixo de cada unidade; destaque de seleção, selo feérico, ação realizada e guarda preservados.
+- Distribuição responsiva por quantidade: 1, 2, 3 e 4 unidades por facção usam coordenadas distintas e escalas progressivamente menores, evitando a sobreposição que ocorria nas fileiras originais.
+- HUD com ações em duas linhas e botão de fim de rodada imediatamente abaixo. Fluxo de comandos e regras da campanha não alterados.
+- Proporção do elemento de montagem revista para `420/520`, cache PWA atualizado para `revolta-cache-v4` e scripts marcados com `?v=4` para contornar versões antigas.
+
+**Atenção:** não são spritesheets finais nem pixel art gerada como arquivo: por enquanto são desenhos de formas dentro do Phaser, planejados para serem substituídos por assets autorais. O campo foi refatorado visualmente, não houve migração do suporte sobrenatural nem do restante das telas para o Phaser.
+
+**Teste recomendado no Pages:** retomar a batalha do dia 2, verificar se Coto/Marga e Guarda/Informante não se sobrepõem, selecionar herói e alvo, usar os comandos. Em batalhas futuras com 3–4 combatentes de cada lado, conferir nomes, barras e hitboxes; revisar em celular e desktop. **QA de navegador ainda pendente** — apenas validação estática e commits no GitHub.
