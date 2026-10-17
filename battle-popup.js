@@ -102,7 +102,7 @@ function play(scene,options){
     c.add(weapon);
     if(weaponType==='shield')c.add(scene.add.polygon(faceRight?-31:31,-8,[-18,-18,18,-18,18,9,0,28,-18,9],0xa1acb4).setStrokeStyle(3,0xdbca9f));
     c.add(scene.add.ellipse(0,25,90,12,0x050c12,.35).setDepth(-1));
-    return {c,weapon};
+    return {c,weapon,weaponType};
   }
   const attacker=makeFighter(a,xAtt,allyLeft),defender=makeFighter(d,xDef,!allyLeft);
   const aName=text(xAtt,135,a.name,11,'#b9e4c9'),dName=text(xDef,135,d.name,11,'#efb7bc');
@@ -157,23 +157,36 @@ function play(scene,options){
     delay(1550,finish);
     return;
   }
-  // Telegraph the strike before lunging: the weapon lifts and swings, not only the body.
-  delay(110,()=>{
-    eventTitle.setText(a.name+' PREPARA O GOLPE');
-    scene.tweens.add({targets:attacker.weapon,angle:allyLeft?-62:62,duration:160,ease:'Sine.easeOut'});
-    scene.tweens.add({targets:attacker.c,y:yChar-7,duration:150,yoyo:true});
+  // Weapon-specific telegraphs: each archetype has a recognizable rhythm.
+  const style=attacker.weaponType;
+  const fast=style==='dagger',heavy=style==='hammer',pierce=style==='spear';
+  const spell=style==='staff',shieldBash=style==='shield';
+  const windup=fast?65:heavy?225:spell?170:130;
+  const release=fast?225:heavy?465:spell?420:shieldBash?365:320;
+  const impact=release+(fast?125:heavy?225:spell?195:175);
+  const recovery=heavy?440:fast?180:285;
+  delay(windup,()=>{
+    eventTitle.setText(spell?a.name+' CONJURA!':heavy?a.name+' ERGUE O MARTELO':pierce?a.name+' ARMA A LANÇA':fast?a.name+' AVANÇA NAS SOMBRAS':shieldBash?a.name+' INVESTE!':a.name+' PREPARA O GOLPE');
+    scene.tweens.add({targets:attacker.weapon,angle:spell?0:heavy?(allyLeft?-110:110):pierce?(allyLeft?-22:22):(allyLeft?-62:62),duration:heavy?230:130,ease:'Sine.easeOut'});
+    scene.tweens.add({targets:attacker.c,y:yChar-(heavy?15:7),duration:140,yoyo:true});
+    if(spell){
+      const charge=add(scene.add.circle(xAtt,yChar-86,12,0xb9a0f0,.38));
+      scene.tweens.add({targets:charge,scale:2.3,alpha:0,duration:470,onComplete:()=>charge.destroy()});
+    }
   });
-  delay(320,()=>{
-    eventTitle.setText(a.name+' ATACA!');
-    scene.tweens.add({targets:attacker.c,x:xAtt+(allyLeft?65:-65),duration:180,yoyo:true,hold:100,ease:'Quad.easeOut'});
-    scene.tweens.add({targets:attacker.weapon,angle:allyLeft?78:-78,duration:155,ease:'Cubic.easeIn',onComplete:()=>{
-      scene.tweens.add({targets:attacker.weapon,angle:allyLeft?10:-10,duration:300});
+  delay(release,()=>{
+    eventTitle.setText(spell?'MAGIA DESENCADEADA!':heavy?'IMPACTO ESMAGADOR!':pierce?'ESTOCADA!':fast?'GOLPE RÁPIDO!':shieldBash?'GOLPE DE ESCUDO!':a.name+' ATACA!');
+    scene.tweens.add({targets:attacker.c,x:xAtt+(allyLeft?(pierce?82:fast?88:65):-(pierce?82:fast?88:65)),duration:fast?95:heavy?235:175,yoyo:true,hold:heavy?145:70,ease:heavy?'Quad.easeIn':'Quad.easeOut'});
+    scene.tweens.add({targets:attacker.weapon,angle:spell?0:heavy?(allyLeft?115:-115):pierce?(allyLeft?28:-28):(allyLeft?78:-78),duration:heavy?235:fast?90:150,ease:'Cubic.easeIn',onComplete:()=>{
+      if(finished)return;
+      scene.tweens.add({targets:attacker.weapon,angle:allyLeft?10:-10,duration:recovery});
     }});
+    if(fast)scene.tweens.add({targets:attacker.c,alpha:.42,duration:70,yoyo:true,repeat:1});
   });
-  delay(515,()=>{
-    slash(xDef,241,0xffd598);
-    scene.cameras.main.shake(105,.004);
-    scene.tweens.add({targets:flash,alpha:.5,duration:60,yoyo:true});
+  delay(impact,()=>{
+    slash(xDef,241,spell?0xc4a5ff:heavy?0xffa577:pierce?0xb4d6db:fast?0xf6d9e7:0xffd598);
+    scene.cameras.main.shake(heavy?195:105,heavy?.008:.004);
+    scene.tweens.add({targets:flash,alpha:heavy?.7:.5,duration:heavy?100:60,yoyo:true});
     scene.tweens.add({targets:defender.c,x:xDef+(allyLeft?14:-14),duration:90,yoyo:true});
     updateBar(dFill,dVal,xDef,dAfter.hp,d.maxhp,lost);
     eventTitle.setText('−'+lost+' PV · '+d.name);
@@ -190,20 +203,20 @@ function play(scene,options){
   });
   let endTime=1150;
   if(counter>0&&dAfter.hp>0){
-    delay(1160,()=>{
+    delay(impact+645,()=>{
       eventTitle.setText('CONTRA-ATAQUE!');
       scene.tweens.add({targets:defender.weapon,angle:allyLeft?62:-62,duration:120,yoyo:true});
       scene.tweens.add({targets:defender.c,x:xDef+(allyLeft?-60:60),duration:175,yoyo:true,hold:75});
     });
-    delay(1380,()=>{
+    delay(impact+865,()=>{
       slash(xAtt,241,0xd9a7f7);
       scene.cameras.main.shake(100,.003);
       updateBar(aFill,aVal,xAtt,aAfter.hp,a.maxhp,counter);
       eventTitle.setText('−'+counter+' PV · '+a.name);
       if(aAfter.hp<=0)scene.tweens.add({targets:attacker.c,alpha:.25,duration:330});
     });
-    endTime=2200;
-  }else endTime=fatal?1910:1550;
+    endTime=impact+1735;
+  }else endTime=impact+(fatal?1395:1035);
   delay(endTime,finish);
 }
 root.RevoltBattlePopup={play};
