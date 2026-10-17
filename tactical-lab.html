@@ -7,17 +7,17 @@ nav{display:flex;gap:10px;align-items:center}a{color:#e4b877}#game{border:2px so
 .controls{display:flex;gap:8px;margin-bottom:10px}button{flex:1;min-width:0;min-height:46px;background:#354f55;border:1px solid #d4a96e;color:#f8e9cf;font:700 13px system-ui;cursor:pointer}button:disabled{opacity:.38;cursor:not-allowed}#info{min-height:58px;background:#22303a;border-left:3px solid #d7a76e;padding:9px 12px;font:13px/1.6 system-ui}#history{color:#ccc1ad;font:12px/1.6 system-ui;min-height:80px;padding:5px 9px}small{color:#9bb8b4}.tag{font:700 11px system-ui;letter-spacing:1px;color:#c9959a}
 </style></head>
 <body><main>
-<nav><a href="./index.html">← Campanha principal</a><span class="tag">EXPERIMENTO TÁTICO · T2.14</span></nav>
+<nav><a href="./index.html">← Campanha principal</a><span class="tag">EXPERIMENTO TÁTICO · T2.15</span></nav>
 <h1>A Primeira Espada</h1>
 <p class="sub">Experimento independente: selecione Coto, toque numa casa azul para mover e ataque o guarda quando estiver adjacente. Use <b>Encerrar turno</b> para permitir a resposta inimiga. Use <b>Prévia cinematográfica</b> para assistir a ataque, cura, defesa ou sequência completa sem mover Coto; ataques reais também abrem a cena. Este protótipo não lê nem modifica seu salvamento.</p>
 <div id="game" aria-label="Campo tático com dez colunas e nove linhas"></div>
-<div class="controls" style="align-items:center"><label for="demoType" style="font:12px system-ui;flex:1">Prévia cinematográfica</label><select id="demoType" style="flex:2;min-height:45px;color:#f8e9cf;background:#354f55;border:1px solid #d4a96e"><option value="attack">Ataque + contra-ataque</option><option value="heal">Cura</option><option value="guard">Defesa</option><option value="sequence">Sequência mista (4 eventos)</option><option value="finisher">Golpe final / derrota</option><option value="enemy">Ataque da Corte</option><option value="roster">Vitrine de ataques: oito heróis</option><option value="arcana">Arcanos: Vega, Olmo e Marga</option><option value="skills">Habilidades: oito heróis</option></select><button id="demo" style="flex:1.6">▶ Reproduzir</button></div>
+<div class="controls" style="align-items:center"><label for="demoType" style="font:12px system-ui;flex:1">Prévia cinematográfica</label><select id="demoType" style="flex:2;min-height:45px;color:#f8e9cf;background:#354f55;border:1px solid #d4a96e"><option value="attack">Ataque + contra-ataque</option><option value="heal">Cura</option><option value="guard">Defesa</option><option value="sequence">Sequência mista (4 eventos)</option><option value="finisher">Golpe final / derrota</option><option value="enemy">Ataque da Corte</option><option value="roster">Vitrine de ataques: oito heróis</option><option value="arcana">Arcanos: Vega, Olmo e Marga</option><option value="skills">Habilidades: oito heróis</option><option value="poses">Poses pixeladas: Coto, Íria, Silas</option></select><button id="demo" style="flex:1.6">▶ Reproduzir</button></div>
 <div class="controls"><button id="attack" disabled>⚔ Atacar</button><button id="end">Encerrar turno</button><button id="restart">Reiniciar</button></div>
 <div id="info" role="status">Iniciando mapa tático…</div><div id="history"></div>
 <p><small>Protótipo de movimento ortogonal, previsão e confronto animado em destaque. Ainda não substitui o combate dos 42 dias.</small></p>
 </main>
 <script src="./tactical-core.js?v=1"></script>
-<script src="./battle-popup.js?v=20"></script>
+<script src="./cinematic-pixel-frames.js?v=21"></script><script src="./battle-popup.js?v=21"></script>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
 <script>
 (function(){
@@ -68,7 +68,7 @@ function demoEvents(mode){
  const foe={id:'guarda',side:'enemy',name:'Guarda de Tributo',hp:28,maxhp:28};
  const wounded={...c,hp:7};
  const enemy={kind:'attack',before:{units:[foe,c]},after:{units:[foe,wounded]},attackerId:'guarda',defenderId:'coto'};
- return mode==='skills'?abilityShowcase:mode==='arcana'?roster.filter(event=>['vega','olmo','marga'].includes(event.attackerId)):mode==='roster'?roster:mode==='sequence'?[attack,heal,guard,returnBlow]:mode==='heal'?[heal]:mode==='guard'?[guard]:mode==='finisher'?[finisher]:mode==='enemy'?[enemy]:[attack];
+ return mode==='poses'?roster.filter(event=>['coto','iria','silas'].includes(event.attackerId)):mode==='skills'?abilityShowcase:mode==='arcana'?roster.filter(event=>['vega','olmo','marga'].includes(event.attackerId)):mode==='roster'?roster:mode==='sequence'?[attack,heal,guard,returnBlow]:mode==='heal'?[heal]:mode==='guard'?[guard]:mode==='finisher'?[finisher]:mode==='enemy'?[enemy]:[attack];
 }
 function showDemo(){
  if(busy||!scene)return;
