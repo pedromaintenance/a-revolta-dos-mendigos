@@ -396,3 +396,30 @@ O núcleo `tactical-core.js` foi avaliado em JavaScript em cinco verificações:
 5. Verificar atualização da versão instalada no celular.
 
 **Próximo marco:** spritesheets próprios por personagem com poses definidas, testes reais de navegador/Android e evolução do grid tático para as batalhas canônicas.
+
+## Entrega T2.10 — golpe final cinematográfico e QA direcionado (17/10/2026)
+
+**Publicação:** v16, branch `main`. Link para teste: https://pedromaintenance.github.io/a-revolta-dos-mendigos/tactical-lab.html
+
+### Implementado
+- `battle-popup.js`: diferencia ataques letais de golpes comuns a partir de `hpBefore > 0 && hpAfter <= 0`, sem modificar as regras de combate. Golpes fatais apresentam cabeçalho **GOLPE FINAL**, explosão visual, símbolo de derrota e desaparecimento progressivo do defensor. O tempo da animação foi estendido para que o finalizador seja perceptível.
+- `tactical-lab.html`: adicionadas as prévias **Golpe final / derrota** e **Ataque da Corte**. Os cenários de demonstração produzem snapshots sintéticos locais e não leem ou alteram a campanha salva.
+- `tests/cinematic-contract.test.js`: contrato ampliado para testar presença das duas prévias e dos gatilhos/efeitos do golpe final.
+- `index.html` versionado para scripts `?v=16`, `sw.js` para `revolta-cache-v16` e laboratório para `battle-popup.js?v=16`.
+- **Sem mudanças na matemática de dano, IA, XP, loot, missões, formato de save ou estrutura das 42 batalhas.**
+
+### QA e limitações
+- Sintaxe JavaScript dos arquivos `app.js`, `sw.js`, `battle-popup.js`, código inline de `tactical-lab.html` e teste de contrato verificada durante a entrega. Consistência do número de versão e presença dos novos cenários também conferidas.
+- A execução completa dos testes Node em GitHub Actions **ainda não foi confirmada** nesta interação; o link do workflow é https://github.com/pedromaintenance/a-revolta-dos-mendigos/actions/workflows/combat-tests.yml.
+- **Não houve execução de navegador para validar os quadros visuais** no Pages; commits e verificação de sintaxe não equivalem a QA gráfico.
+- Ataques em área e eventos de cura continuam utilizando os cut-ins existentes; somente ataques que reduzem PV a zero recebem o finalizador.
+- Personagens seguem como pixel art procedural; spritesheets desenhados à mão e integração do grid na campanha continuam pendentes.
+
+### Aceitação no Pages
+1. Abrir o laboratório e selecionar **Golpe final / derrota**; verificar o título específico, o impacto e a queda do guarda.
+2. Selecionar **Ataque da Corte**; confirmar posição e golpe do guarda contra Coto.
+3. Reproduzir a **Sequência mista** e conferir que PRÓXIMO/PULAR TUDO continuam funcionando.
+4. Testar no jogo principal um ataque letal e comparar o resultado narrativo depois do cut-in; confirmar que o save não foi afetado.
+5. Verificar o resultado real do CI e abrir um bug específico se houver erro em qualquer navegador.
+
+**Próximo passo recomendado:** executar e tornar obrigatórios testes em navegador, formalizar modelos gráficos por personagem e substituir pixel art procedural por spritesheets autorais.
