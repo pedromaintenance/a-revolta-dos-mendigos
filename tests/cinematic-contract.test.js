@@ -13,7 +13,7 @@ const lab=read('tactical-lab.html');
 const html=read('index.html'),sw=read('sw.js');
 const test=(name,fn)=>{fn();process.stdout.write('PASS '+name+'\n')};
 test('all active browser scripts parse',()=>{
- for(const file of ['app.js','phaser-battle.js','battle-popup.js','sw.js','tactical-core.js'])
+ for(const file of ['app.js','phaser-battle.js','battle-popup.js','cinematic-pixel-frames.js','sw.js','tactical-core.js'])
   assert.doesNotThrow(()=>new vm.Script(read(file),{filename:file}));
  const inline=lab.match(/<script>\s*([\s\S]*?)<\/script>/);
  assert.ok(inline,'inline tactical lab script');
@@ -26,6 +26,9 @@ test('main release and service worker share version',()=>{
  assert.ok(html.includes('battle-popup.js?v='+version));
  assert.ok(sw.includes('revolta-cache-v'+version));
  assert.ok(sw.includes("'./battle-popup.js'"));
+ assert.ok(html.includes('cinematic-pixel-frames.js?v='+version));
+ assert.ok(sw.includes("'./cinematic-pixel-frames.js'"));
+ assert.ok(lab.includes('cinematic-pixel-frames.js?v='+version));
 });
 test('rules engine queues all three event kinds',()=>{
  assert.ok(app.includes("queueBattleSupport('heal'"));
@@ -119,4 +122,15 @@ test('ability showcase, runtime tests and browser tests remain reachable',()=>{
  assert.ok(lab.includes("mode==='skills'?abilityShowcase"));
  assert.doesNotThrow(()=>new vm.Script(read('tests/cinematic-runtime.test.js')));
  assert.doesNotThrow(()=>new vm.Script(read('tests/browser-smoke.cjs')));
+});
+
+test('sprite poses are wired to real cinematic phases',()=>{
+ assert.ok(popup.includes("window.RevoltPixelFrames?.createFighter?.("));
+ assert.ok(popup.includes("attacker.pose('ready')"));
+ assert.ok(popup.includes("attacker.pose('strike')"));
+ assert.ok(popup.includes("defender.pose('hurt')"));
+ assert.ok(popup.includes("defender.pose('down')"));
+ assert.ok(popup.includes("defender.pose('guard')")||popup.includes("defender.pose(kind==='guard'?'guard':'ready')"));
+ assert.ok(lab.includes('value="poses"'));
+ assert.doesNotThrow(()=>new vm.Script(read('tests/pixel-frames.test.cjs')));
 });
