@@ -296,3 +296,33 @@ Criar `BattleEventQueue` com eventos tipados `attack / damage / heal / guard / e
 5. Sem Phaser, confirmar que a campanha prossegue sem travar.
 
 **Próximo passo:** eventos estruturados de cura e defesa; spritesheets animados locais; QA automatizado de turnos, conclusão de batalha e transição do modal.
+
+## Entrega T2.6 — cura e proteção cinematográficas (17/10/2026)
+
+**Publicação:** branch `main`, release v12. Concluída a implementação estática, pendente validação visual real no Chrome/Android.
+
+### Funcionalidade
+- `app.js`: novo registrador `queueBattleSupport(kind,caster,target,hpBefore)`, produz eventos cinematográficos de `heal` e `guard` com nomes, PV antes/depois e autoria.
+- Curativo com ervas e técnicas de cura de Marga/Olmo geram eventos somente quando **PV efetivamente aumentam**. Não são criadas curas fictícias quando os PV já estão no máximo.
+- Ação `Defender` e habilidade `Baluarte` de Lorena geram eventos de proteção, inclusive para aliados protegidos coletivamente; o motor continua estabelecendo `guard=true`.
+- `phaser-battle.js`: propagação de `event.kind` para a fila, mantendo a ordem canônica dos eventos.
+- `battle-popup.js`: duas variantes novas na mesma cena cinematográfica: **CURA** (anel verde, símbolo de cura, barra de PV crescente, PV recuperados) e **PROTEÇÃO** (anel azul, escudo, mensagem defensiva). Eventos existentes de ataque e contra-ataque preservados.
+- Progressão de fila agora usa a legenda **EVENTO X / Y**, adequada para misturas de golpe, cura e proteção.
+- `index.html` carrega scripts `?v=12`, `sw.js` usa `revolta-cache-v12`, laboratório usa `battle-popup.js?v=12`.
+
+### Restrições
+- **Ainda não substitui sprites geométricos por spritesheets de produção**.
+- O suporte sobrenatural do Dia 42 e a cura que acontece entre dias ainda não são integralmente cinematográficos.
+- Recarregar durante o evento preserva o save, mas não a reprodução visual.
+- Cenas dependem da disponibilidade do Phaser, ainda externo.
+- Não foi executado teste visual real no Pages neste marco. Os scripts foram verificados quanto à sintaxe, mas isso não comprova a experiência final.
+
+### Aceite em Pages
+1. Selecionar Coto → Defender: ver cinematográfica azul e retornar com `guard=true`, sem alteração indevida dos PV.
+2. Usar Curativo após sofrer dano: animação verde e quantidade de PV consistente.
+3. Com Marga ou Olmo recrutados: ativar cura pessoal/em grupo; eventos de cura devem aparecer na sequência correta.
+4. Com Lorena: usar Baluarte; proteção para todos os aliados vivos, sem aplicação dupla.
+5. Executar um ataque com dano seguido de cura e avançar a fila com PRÓXIMO e PULAR TUDO.
+6. Verificar regressões de vitória/derrota, PWA, Android e importação do save v1.
+
+**Próximo foco recomendado:** instrumentar testes de fluxo completo, transição de turnos e eventos de ação; introduzir spritesheets e animações locais por classe após testes em navegador.
