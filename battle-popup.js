@@ -1,4 +1,4 @@
-/* Carcaça — animated combat cut-in. Pure presentation: damage comes from tactical-core.js. */
+/* Carcaça — cinematic combat presentation. HP is resolved by the canonical rules engine. */
 (function(root){
 'use strict';
 const W=420,H=460;
@@ -25,6 +25,7 @@ function play(scene,options){
   rect(210,229,406,310,0x101d2a).setStrokeStyle(3,0xd1a56c);
   rect(210,95,396,34,0x25303b);
   text(210,95,'✦ CONFRONTO ✦',16,'#f5cc8c');
+  if(options.sequenceTotal>1)text(210,118,'GOLPE '+options.sequencePosition+' / '+options.sequenceTotal,10,'#b4d9da');
   rect(210,360,396,35,0x26343d);
   const eventTitle=text(210,359,'PREPARANDO O GOLPE',11,'#e9d0a2');
   const allyLeft=a.side==='ally',xAtt=allyLeft?113:305,xDef=allyLeft?307:111,yChar=244;
@@ -46,9 +47,19 @@ function play(scene,options){
   let dFill=rect(xDef-70,177,140*Math.max(0,d.hp/d.maxhp),7,0xd57b86).setOrigin(0,.5);
   const flash=rect(210,230,396,305,0xffffff,0);
   // Ensure all objects, including the weapon, are owned by the cut-in.
-  const skip=rect(335,390,128,29,0x354e57).setStrokeStyle(1,0xc8ae83);
-  const skipText=text(335,390,'PULAR ››',11);
+  const hasQueue=options.sequenceTotal>1&&typeof options.onSkipAll==='function';
+  const skip=rect(hasQueue?275:335,390,hasQueue?112:128,29,0x354e57).setStrokeStyle(1,0xc8ae83);
+  text(hasQueue?275:335,390,hasQueue?'PRÓXIMO ›':'PULAR ››',11);
   skip.setInteractive({useHandCursor:true}).on('pointerdown',finish);
+  if(hasQueue){
+    const all=rect(91,390,148,29,0x5b3e43).setStrokeStyle(1,0xd6a88c);
+    text(91,390,'PULAR TUDO »',10);
+    all.setInteractive({useHandCursor:true}).on('pointerdown',()=>{
+      if(finished)return;
+      finished=true;jobs.forEach(j=>j.remove(false));
+      rootLayer.destroy(true);blocker.destroy();options.onSkipAll();
+    });
+  }
   const slash=(x,y,color)=>{
     const line=add(scene.add.rectangle(x,y,95,7,color).setRotation(-.7));
     const spark=add(scene.add.star(x,y,4,12,32,0xffe9ba,.9));
