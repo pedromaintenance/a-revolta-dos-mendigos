@@ -156,3 +156,31 @@ Começar com estados pequenos: patrulhar, defender posição, priorizar civil/al
 - [ ] Corrigir diferenças de interação e acessibilidade antes de vincular a campanha real
 
 **Próxima entrega recomendada:** 1º capítulo tático com mapa autoral, controle de câmera, linha de movimento, dados reais do Coto e do Guarda, painel de confirmação e eventos estruturados. Só depois substituir o fluxo de batalha principal.
+
+## Entrega T2.1 — confronto animado em popup (16/10/2026)
+
+**Pedido:** preservar a lógica de mapa/turnos aprovada e animar os ataques numa janela de evento inspirada no ritmo das cenas de confronto de Fire Emblem.
+
+### Publicado na branch `main`
+- `battle-popup.js` (novo): sequência de batalha cinematográfica em uma camada Phaser sobre o mapa — fundo escurecido, dois retratos pixelados provisórios maiores, nomes, barras de PV, avanço e recuo do atacante, risco visual do golpe, tremor, número do dano, contra-ataque e queda/desvanecimento se derrotado.
+- Botão **PULAR** permite encerrar a apresentação e aplicar o estado final imediatamente.
+- `tactical-lab.html`: ações de ataque do jogador e do Guarda, se causarem dano, chamam o novo popup. Enquanto ocorre a animação, os comandos são bloqueados para evitar ações simultâneas.
+- O estado final é resolvido **uma única vez** pelo `RevoltTactics.dispatch()`, antes da animação, e aplicado depois do popup. A animação lê as diferenças de PV e não calcula dano, acerto nem resultados próprios.
+- A apresentação usa figuras geométricas provisórias, não sprites proprietários do Fire Emblem; arte e animações sprite-by-sprite finais permanecem no backlog.
+
+### Limites conhecidos
+- A primeira versão permite um ataque e um contra-ataque; não oferece spritesheets autorais de vários quadros, ataques à distância ou múltiplas unidades.
+- Na fase inimiga, o popup mostra o golpe ocorrido depois de a IA ter escolhido sua movimentação; o mapa aplica a posição final quando a animação termina.
+- Não há áudio implementado, nem seleção de estilos cinemáticos, nem velocidade customizável.
+- Essa implementação não altera nem lê o save da campanha principal.
+- A biblioteca Phaser ainda vem de CDN; laboratório requer rede.
+
+### QA recomendado
+- [ ] Mover Coto até adjacência e atacar: abrir popup, verificar perda de PV da Guarda e contra-ataque se sobreviver
+- [ ] Terminar turno próximo ao guarda: popup de ataque inimigo e atualização do mapa depois
+- [ ] Derrotar a Guarda durante o popup e conferir resultado no mapa
+- [ ] Usar **PULAR** para evitar travamento ou dano duplicado
+- [ ] Verificar tela estreita, orientação vertical, cliques repetidos e acessibilidade
+- [ ] Testar carregamento offline apenas após hospedagem local da engine
+
+**Verificação realizada:** sintaxe JavaScript do popup e do script inline do laboratório analisadas com sucesso; commits confirmados. Teste visual com navegador/Pages ainda pendente.
