@@ -10,6 +10,7 @@ function play(scene,options){
   const dAfter=after.units.find(u=>u.id===options.defenderId);
   const aAfter=after.units.find(u=>u.id===options.attackerId);
   if(!a||!d||!dAfter||!aAfter){options.onDone();return;}
+  const kind=options.kind||'attack';
   const lost=Math.max(0,d.hp-dAfter.hp),counter=Math.max(0,a.hp-aAfter.hp);
   const viewportHeight=scene.scale.height;
   const blocker=scene.add.zone(W/2,viewportHeight/2,W,viewportHeight).setDepth(1999).setInteractive();
@@ -24,8 +25,8 @@ function play(scene,options){
   rect(210,viewportHeight/2,W,viewportHeight,0x080b12,.9);
   rect(210,229,406,310,0x101d2a).setStrokeStyle(3,0xd1a56c);
   rect(210,95,396,34,0x25303b);
-  text(210,95,'✦ CONFRONTO ✦',16,'#f5cc8c');
-  if(options.sequenceTotal>1)text(210,118,'GOLPE '+options.sequencePosition+' / '+options.sequenceTotal,10,'#b4d9da');
+  text(210,95,kind==='heal'?'✚ CURA ✚':kind==='guard'?'⬡ PROTEÇÃO ⬡':'✦ CONFRONTO ✦',16,'#f5cc8c');
+  if(options.sequenceTotal>1)text(210,118,'EVENTO '+options.sequencePosition+' / '+options.sequenceTotal,10,'#b4d9da');
   rect(210,360,396,35,0x26343d);
   const eventTitle=text(210,359,'PREPARANDO O GOLPE',11,'#e9d0a2');
   const allyLeft=a.side==='ally',xAtt=allyLeft?113:305,xDef=allyLeft?307:111,yChar=244;
@@ -70,6 +71,27 @@ function play(scene,options){
     label.setText(now+' / '+max+' PV');
     const floater=text(x,208,'−'+damage,23,'#ff8588');
     scene.tweens.add({targets:floater,y:181,alpha:0,duration:700,onComplete:()=>floater.destroy()});
+  }
+  if(kind==='heal'||kind==='guard'){
+    const healed=Math.max(0,dAfter.hp-d.hp);
+    delay(200,()=>{
+      eventTitle.setText(kind==='heal'?a.name+' RESTAURA '+d.name:d.name+' ASSUME DEFESA!');
+      scene.tweens.add({targets:defender.c,scale:1.08,duration:240,yoyo:true,ease:'Sine.easeInOut'});
+    });
+    delay(420,()=>{
+      const color=kind==='heal'?0x72e5a7:0x89c2f8;
+      const ring=add(scene.add.circle(xDef,236,29,color,.14).setStrokeStyle(4,color,.9));
+      const symbol=text(xDef,213,kind==='heal'?'✚':'⬡',40,kind==='heal'?'#a5ffbf':'#bfdfff');
+      scene.tweens.add({targets:ring,scale:2.5,alpha:0,duration:670,onComplete:()=>ring.destroy()});
+      scene.tweens.add({targets:symbol,y:183,alpha:0,duration:700,onComplete:()=>symbol.destroy()});
+      if(kind==='heal'){
+        scene.tweens.add({targets:dFill,displayWidth:140*Math.max(0,dAfter.hp/dAfter.maxhp),duration:480});
+        dVal.setText(dAfter.hp+' / '+dAfter.maxhp+' PV');
+        eventTitle.setText(d.name+' RECUPERA +'+healed+' PV');
+      }else eventTitle.setText(d.name+' ESTÁ PROTEGIDO');
+    });
+    delay(1550,finish);
+    return;
   }
   delay(220,()=>{eventTitle.setText(a.name+' ATACA!');scene.tweens.add({targets:attacker.c,x:xAtt+(allyLeft?65:-65),duration:160,yoyo:true,hold:90,ease:'Sine.easeOut'});});
   delay(400,()=>{
