@@ -209,3 +209,36 @@ Começar com estados pequenos: patrulhar, defender posição, priorizar civil/al
 **Verificações locais do código:** script inline da página analisado quanto à sintaxe, integração ao popup confirmada e commits no GitHub executados. **Pendente:** teste visual efetivo no GitHub Pages; não declarar bug resolvido sem retorno visual do usuário.
 
 **Próximo passo após QA:** eventos de combate estruturados (incluindo movimento/turno inimigo), spritesheets animadas locais e popup de confronto na batalha canônica apenas quando houver paridade funcional.
+
+## Entrega T2.3 — cut-in cinematográfico integrado à campanha principal (16/10/2026)
+
+**Motivação:** a experiência de animação estava restrita a `tactical-lab.html` e o jogador solicitou seguir com melhorias que fossem visíveis no jogo real, em vez de somente demonstrações.
+
+### Publicado em `main`
+- `index.html` passou a carregar `battle-popup.js?v=3` junto da batalha canônica; `phaser-battle.js?v=9` e `app.js?v=9`.
+- `RevoltBattleBridge.snapshot()` expõe `targeting` do combate canônico para identificar o herói autor do ataque sem adivinhar a origem.
+- `phaser-battle.js` compara estado anterior/atual após os comandos e, **quando um golpe do jogador reduz os PV de um inimigo e a cena ainda está em batalha**, abre uma janela cinematográfica com atacante/defensor, barras de PV e dano calculado pelo próprio `app.js`. O popup é visual: não calcula nem reaplica dano.
+- A animação só apresenta **um golpe sem contra-ataque**, já que o motor principal não resolve contra-ataque imediato após cada golpe como o laboratório; não criar efeitos mecânicos fictícios.
+- Bloqueio temporário de comandos pelo canvas e pelos botões HTML enquanto a cena cinematográfica está visível. `refresh()` evita remontar a cena enquanto ela está ocupada.
+- `battle-popup.js` teve cobertura do viewport adaptada à altura real do Phaser (460 no laboratório; 560 no combate principal), com camada modal interativa que bloqueia toques no mapa enquanto o popup está ativo.
+- O PWA passou para `revolta-cache-v9` e inclui `battle-popup.js` no core. O laboratório também passa a usar `battle-popup.js?v=3`.
+
+### Limitações relevantes
+- **Ataques letais finais** que mudam imediatamente de tela via `winBattle()` **não exibem o popup**: a cena Phaser é destruída pelo fluxo canônico. É necessário introduzir uma fila de eventos e transição adiada antes da próxima tela.
+- **Turnos inimigos com múltiplos atacantes**, habilidades de cura, bloqueios e habilidades que causam dano múltiplo ainda não têm eventos explícitos/encenação completa. Para habilidades de área, esta primeira versão pode mostrar somente o primeiro inimigo afetado.
+- O render final é reconstruído a cada ação; mesmo com popup, esta ainda é uma solução de transição e não uma arquitetura de eventos estruturados.
+- Os personagens do cut-in são gráficos geométricos provisórios, não spritesheets animados produzidos para a Carcaça.
+- Phaser ainda depende de CDN para inicializar. Continuam pendentes teste real de navegador e confiabilidade offline.
+
+### Roteiro de validação
+1. Abrir a campanha principal no Pages com conexão, iniciar dia 1 e entrar na batalha.
+2. Selecionar Coto no roster, tocar **Atacar** e selecionar Guarda de Tributo; verificar popup e valor correto do dano.
+3. Testar PULAR no popup e confirmar que o inimigo perde PV uma única vez.
+4. Continuar a batalha e confirmar funcionamento dos controles HTML e Phaser após a animação.
+5. No laboratório tático, usar **Ver animação**, testar contra-ataque e botão PULAR.
+6. Verificar efeitos de cache, console e tela estreita do Android.
+
+**QA efetuado:** código enviado ao GitHub e verificação estática de sintaxe em andamento/concluída conforme relatório de release. **Não afirmar validação visual real no Pages.**
+
+### Próximo marco
+Criar `BattleEventQueue` com eventos tipados `attack / damage / heal / guard / enemy-turn / defeat`, processar transições letais antes da tela de vitória e renderizar sequências de múltiplos inimigos sem inferir autoria a partir de diferença entre snapshots.
