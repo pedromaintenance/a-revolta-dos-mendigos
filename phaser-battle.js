@@ -47,8 +47,8 @@ function mount(){
     this.add.text(103,78,'A RESISTÊNCIA',{fontFamily:'monospace',fontSize:'10px',color:'#98ceb0'}).setOrigin(.5);
     this.add.text(317,78,'A CORTE',{fontFamily:'monospace',fontSize:'10px',color:'#e1a6ac'}).setOrigin(.5);
     const acted=state.acted||[];
-    function figure(scene,u,enemy,x,y,selected){
-      const c=scene.add.container(x,y);
+    function figure(scene,u,enemy,x,y,selected,scale=1){
+      const c=scene.add.container(x,y);c.setScale(scale);
       const skin=enemy?0xd3b7a6:0xdcb99a,cloth=enemy?0x825464:(u.id==='coto'?0x598378:u.id==='marga'?0x937a56:u.id==='iria'?0x596e84:0x6b7f73);
       const dark=enemy?0x342735:0x283b3a;
       const pix=(px,py,w,h,color)=>scene.add.rectangle(px,py,w,h,color).setOrigin(0,0);
@@ -77,15 +77,16 @@ function mount(){
       if(u.guard)c.add(scene.add.text(-45,-93,'⬡',{fontFamily:'monospace',fontSize:'17px',color:'#d2e0ff'}));
       if(!enemy&&acted.includes(u.id))c.add(scene.add.text(32,-93,'✓',{fontFamily:'monospace',fontSize:'17px',color:'#f5cc76'}));
       if(u.ward)c.add(scene.add.text(0,-98,'✧ SELO',{fontFamily:'monospace',fontSize:'10px',color:'#e2baff'}).setOrigin(.5));
-      const hit=scene.add.zone(x,y-20,145,142).setInteractive({useHandCursor:true});
+      const hit=scene.add.zone(x,y-20*scale,125,Math.max(65,135*scale)).setInteractive({useHandCursor:true});
       hit.on('pointerdown',()=>{if(u.hp<=0)return;window.RevoltBattleBridge.command((enemy?'targetE:':'selectHero:')+u.id)});
       if(selected){scene.tweens.add({targets:c,y:y-4,duration:450,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});}
     }
     // Two clearly separated columns, max four fighters each, no overlapping labels.
     const draw=(units,enemy)=>{
       const n=units.length;
-      const ys=n<=2?(n===1?[204]:[176,290]):n===3?[149,246,343]:[138,216,294,365];
-      units.forEach((u,i)=>figure(this,u,enemy,enemy?316:104,ys[i]||204,state.selected===(enemy?'e':'h')+u.id));
+      const ys=n<=2?(n===1?[216]:[163,288]):n===3?[143,233,321]:[116,188,260,332];
+      const scale=n>=4?.67:n===3?.78:n===2?.91:1;
+      units.forEach((u,i)=>figure(this,u,enemy,enemy?316:104,ys[i]||216,state.selected===(enemy?'e':'h')+u.id,scale));
     };
     draw(state.heroes,false);draw(state.enemies,true);
     g.fillStyle(0x131f2a).fillRect(0,370,W,150);
