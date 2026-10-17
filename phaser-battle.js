@@ -107,6 +107,17 @@ function mount(){
     draw(state.heroes,false);draw(state.enemies,true);
     // Transitions are derived from canonical HP changes, never from guessed damage.
     if(previous){
+      // A newly acted hero visibly surges toward the opposing line.
+      const prevActed=new Set(previous.acted||[]);
+      for(const id of state.acted||[]){
+        if(prevActed.has(id))continue;
+        const actor=unitsByKey.get('h'+id);
+        if(actor&&state.heroes.some(h=>h.id===id&&h.hp>0)){
+          this.tweens.add({targets:actor.c,x:actor.x+35,duration:125,yoyo:true,ease:'Quad.easeOut'});
+          const swish=this.add.ellipse(actor.x+42,actor.y-45,26,7,0xe6d9a3,.85).setRotation(-.6).setDepth(30);
+          this.tweens.add({targets:swish,x:swish.x+35,alpha:0,duration:240,onComplete:()=>swish.destroy()});
+        }
+      }
       const before=new Map([...previous.heroes.map(u=>['h'+u.id,u]),...previous.enemies.map(u=>['e'+u.id,u])]);
       for(const current of [...state.heroes.map(u=>({...u,_key:'h'+u.id})),...state.enemies.map(u=>({...u,_key:'e'+u.id}))]){
         const old=before.get(current._key),entry=unitsByKey.get(current._key);
