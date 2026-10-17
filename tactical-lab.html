@@ -7,21 +7,22 @@ nav{display:flex;gap:10px;align-items:center}a{color:#e4b877}#game{border:2px so
 .controls{display:flex;gap:8px;margin-bottom:10px}button{flex:1;min-height:46px;background:#354f55;border:1px solid #d4a96e;color:#f8e9cf;font:700 13px system-ui;cursor:pointer}button:disabled{opacity:.38;cursor:not-allowed}#info{min-height:58px;background:#22303a;border-left:3px solid #d7a76e;padding:9px 12px;font:13px/1.6 system-ui}#history{color:#ccc1ad;font:12px/1.6 system-ui;min-height:80px;padding:5px 9px}small{color:#9bb8b4}.tag{font:700 11px system-ui;letter-spacing:1px;color:#c9959a}
 </style></head>
 <body><main>
-<nav><a href="./index.html">← Campanha principal</a><span class="tag">EXPERIMENTO TÁTICO · T1</span></nav>
+<nav><a href="./index.html">← Campanha principal</a><span class="tag">EXPERIMENTO TÁTICO · T2</span></nav>
 <h1>A Primeira Espada</h1>
-<p class="sub">Experimento independente: selecione Coto, toque numa casa azul para mover e ataque o guarda quando estiver adjacente. Use <b>Encerrar turno</b> para permitir a resposta inimiga. Este protótipo não lê nem modifica seu salvamento.</p>
+<p class="sub">Experimento independente: selecione Coto, toque numa casa azul para mover e ataque o guarda quando estiver adjacente. Use <b>Encerrar turno</b> para permitir a resposta inimiga. Os golpes abrem uma cena animada de confronto. Este protótipo não lê nem modifica seu salvamento.</p>
 <div id="game" aria-label="Campo tático com dez colunas e nove linhas"></div>
 <div class="controls"><button id="attack" disabled>⚔ Atacar</button><button id="end">Encerrar turno</button><button id="restart">Reiniciar</button></div>
 <div id="info" role="status">Iniciando mapa tático…</div><div id="history"></div>
-<p><small>Protótipo de movimento ortogonal, obstáculos, ocupação, previsão e contra-ataque. Ainda não substitui o combate dos 42 dias.</small></p>
+<p><small>Protótipo de movimento ortogonal, previsão e confronto animado em destaque. Ainda não substitui o combate dos 42 dias.</small></p>
 </main>
 <script src="./tactical-core.js?v=1"></script>
+<script src="./battle-popup.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
 <script>
 (function(){
 'use strict';
 const T=window.RevoltTactics,W=420,H=460;
-let state=T.initial(),scene=null;
+let state=T.initial(),scene=null,busy=false;
 const info=document.getElementById('info'),history=document.getElementById('history'),attackButton=document.getElementById('attack');
 const alive=(id)=>state.units.find(u=>u.id===id);
 function paint(){
@@ -41,7 +42,7 @@ function paint(){
   if(T.bridges.has(k)){g.lineStyle(2,0x6d4b37).lineBetween(xx+2,yy+19,xx+36,yy+19);}
   if(moves.has(k)){g.fillStyle(0x77bcdc,.42).fillRect(xx+2,yy+2,tile-5,tile-5);g.lineStyle(1,0x9bdaec).strokeRect(xx+1,yy+1,tile-3,tile-3);}
   const hit=scene.add.zone(xx+19,yy+19,tile,tile).setDepth(3).setInteractive({useHandCursor:true});
-  hit.on('pointerdown',()=>{if(state.over)return;const unit=state.units.find(u=>u.x===x&&u.y===y&&u.hp>0);if(unit){if(unit.side==='ally')update(T.dispatch(state,{type:'select',id:unit.id}));else if(state.selected==='coto'&&T.distance(alive('coto'),unit)===1)update(T.dispatch(state,{type:'attack'}));return;}if(moves.has(k))update(T.dispatch(state,{type:'move',x,y}));});
+  hit.on('pointerdown',()=>{if(state.over||busy)return;const unit=state.units.find(u=>u.x===x&&u.y===y&&u.hp>0);if(unit){if(unit.side==='ally')update(T.dispatch(state,{type:'select',id:unit.id}));else if(state.selected==='coto'&&T.distance(alive('coto'),unit)===1)perform({type:'attack'});return;}if(moves.has(k))update(T.dispatch(state,{type:'move',x,y}));});
  }
  for(const u of state.units){
   const cx=ox+u.x*tile+19,cy=oy+u.y*tile+19;
@@ -63,9 +64,26 @@ function paint(){
  history.textContent=state.log.slice(0,4).join('  •  ');
 }
 function update(next){state=next;paint();}
-document.getElementById('attack').onclick=()=>update(T.dispatch(state,{type:'attack'}));
-document.getElementById('end').onclick=()=>update(T.dispatch(state,{type:'end'}));
-document.getElementById('restart').onclick=()=>update(T.initial());
+function perform(action){
+ if(busy||state.over)return;
+ const before=state,next=T.dispatch(state,action);
+ const original=before.units.find(u=>u.id==='coto'),foe=before.units.find(u=>u.id==='guarda');
+ const resultingAlly=next.units.find(u=>u.id==='coto'),resultingFoe=next.units.find(u=>u.id==='guarda');
+ const playerHit=action.type==='attack'&&resultingFoe.hp<foe.hp;
+ const enemyHit=action.type==='end'&&resultingAlly.hp<original.hp;
+ if((playerHit||enemyHit)&&window.RevoltBattlePopup&&scene){
+   busy=true;
+   attackButton.disabled=true;document.getElementById('end').disabled=true;document.getElementById('restart').disabled=true;
+   window.RevoltBattlePopup.play(scene,{
+     before,after:next,attackerId:playerHit?'coto':'guarda',
+     defenderId:playerHit?'guarda':'coto',
+     onDone:()=>{busy=false;document.getElementById('restart').disabled=false;update(next);}
+   });
+ }else update(next);
+}
+document.getElementById('attack').onclick=()=>perform({type:'attack'});
+document.getElementById('end').onclick=()=>perform({type:'end'});
+document.getElementById('restart').onclick=()=>{if(!busy)update(T.initial());};
 if(!window.Phaser){info.textContent='Phaser não carregou. Reabra com acesso à internet.';return;}
 class Scene extends Phaser.Scene{constructor(){super({key:'tactics'});}create(){scene=this;paint();}}
 new Phaser.Game({type:Phaser.CANVAS,parent:'game',width:W,height:H,backgroundColor:'#17232f',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_HORIZONTALLY},render:{pixelArt:true,antialias:false},scene:[Scene]});
