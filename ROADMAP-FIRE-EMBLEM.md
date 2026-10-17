@@ -545,3 +545,42 @@ O núcleo `tactical-core.js` foi avaliado em JavaScript em cinco verificações:
 **Limitações restantes:** figuras pixeladas ainda são procedurais, não spritesheets finais; os smoke tests comprovam presença e transição do canvas, mas **não fazem comparação pixel a pixel** com uma arte de referência. Phaser ainda vem de CDN. A movimentação tática em grade ainda está isolada no laboratório, não integrada às 42 batalhas canônicas.
 
 **Próximo marco recomendado:** estabelecer referências visuais de sprites/efeitos e regressão por screenshots, converter figuras procedurais em spritesheets locais por personagem e planejar a integração do tabuleiro ao combate da campanha sem destruir saves antigos.
+
+
+## Entrega T2.15 — atlas pixel-art com seis poses reais por combatente (17/10/2026)
+
+**Release:** **v21** — branch main.
+**Campanha:** https://pedromaintenance.github.io/a-revolta-dos-mendigos/
+**Prévia principal:** https://pedromaintenance.github.io/a-revolta-dos-mendigos/tactical-lab.html
+
+### 1. Atlas de animação gerado localmente
+
+- Novo módulo **cinematic-pixel-frames.js**: gera, em Canvas 2D local, **uma folha horizontal com seis quadros 20×30 px**, ampliados 4× para exibição no Phaser (480×120 px por atlas).
+- As poses têm desenhos **diferentes de corpo e membros**, não apenas interpolação do mesmo desenho: idle (repouso), ready (preparação), strike (golpe), hurt (reação), guard (defesa) e down (queda). Os pixels são desenhados sem suavização.
+- Respeita as paletas e detalhes dos oito heróis, armaduras e trajes genéricos da Corte, curandeiros e conjuradores. Armas e escudos continuam independentes, com a coreografia da v18.
+- O atlas é registrado por Phaser.Textures.TextureManager.addSpriteSheet, com chave por unidade, orientação e paleta; novas instâncias reutilizam texturas existentes. Há **fallback** para o corpo procedural antigo se a API Canvas/TextureManager não estiver disponível.
+- **battle-popup.js** muda o quadro conforme a apresentação: preparação, golpe, reação ao impacto, derrota, contra-ataque, cura e proteção. A troca de poses é visual e **não modifica PV, dano, turnos, XP ou save**.
+- **tactical-lab.html** acrescenta a opção **Poses pixeladas: Coto, Íria, Silas**, permitindo comparar três combatentes sem modificar a campanha.
+
+### 2. Testes acrescentados
+
+- **tests/pixel-frames.test.cjs** valida os seis quadros, presença de pixels em **cada faixa da folha**, cache por chave, orientação, alternância entre poses e retorno seguro sem TextureManager.
+- **tests/cinematic-contract.test.js** exige carregamento da nova biblioteca na campanha e no laboratório, além de gatilhos de pose.
+- **tests/browser-smoke.cjs** inclui o modo Poses e comprova, com Phaser/Canvas reais em Chromium, que foram criados sprites e que a quantidade de mudanças de quadro cresceu durante a animação. Continua verificando canvas, PULAR/PULAR TUDO, controles e erros JavaScript.
+- O workflow **combat-tests.yml** executa os novos testes Node, os testes táticos, de contratos, mock Phaser e Chromium. O novo módulo está na lista de arquivos que disparam CI.
+- A campanha e o laboratório carregam cinematic-pixel-frames.js?v=21 antes do popup; o cache offline da PWA inclui o novo módulo e agora usa **revolta-cache-v21**.
+
+### 3. Evidências e QA real
+
+- **[CI #39045603882](https://github.com/pedromaintenance/a-revolta-dos-mendigos/actions/runs/39045603882)** — **CONCLUÍDO COM SUCESSO**: os dois jobs passaram, incluindo o teste Node do atlas e o smoke test Chromium. A execução publicou o artefato **cinematic-browser-screenshots** com capturas de ataque, cura, defesa, golpe final, ataque da Corte, habilidades e poses.
+- Uma execução intermediária falhou por uma asserção arbitrária no teste Node (contagem total de retângulos); corrigimos para verificar que **cada quadro contém pixels**. A execução subsequente passou. Chromium já tinha passado antes da correção.
+- **Pendente:** aceite artístico, fluidez em celulares e atualização do cache de PWAs instaladas. O Chromium da CI testa o jogo servido localmente no runner, não o navegador ou cache privado do jogador.
+
+### 4. Limites e próximos passos
+
+- **São spritesheets procedurais locais reais**, mas ainda **não são assets desenhados à mão** por personagem. A implementação estabelece as poses para substituição gradual por spritesheets autorais.
+- A folha é construída quando um personagem aparece, reutilizada no mesmo contexto Phaser e não gravada como PNG independente.
+- A movimentação tática em grade continua no laboratório, separada das 42 batalhas da campanha.
+- **Aceite no Pages:** selecionar Poses pixeladas: Coto, Íria, Silas; observar preparação, golpe e reação corporal; depois testar Habilidades: oito heróis e Golpe final / derrota.
+- **Próximo marco:** spritesheets autorais dos oito heróis, testes de acessibilidade/mobile e posterior integração planejada da grade tática ao combate canônico.
+
