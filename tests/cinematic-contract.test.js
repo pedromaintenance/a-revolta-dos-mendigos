@@ -103,3 +103,20 @@ test('arcane cinematics use distinct cast and impact motifs',()=>{
  assert.ok(popup.includes("magicMotif(xAtt,yChar-76,'cast')"));
  assert.ok(popup.includes("magicMotif(xDef,241,'hit')"));
 });
+
+test('canonical skill metadata reaches the Phaser presentation',()=>{
+ assert.ok(app.includes("function fightDamage(enemy,dmg,src,ability=null,sourceId=null)"));
+ assert.ok(app.includes("battleVisualEvents.push({kind:'attack',ability"));
+ assert.ok(app.includes('function queueBattleSupport(kind,caster,target,hpBefore,ability=null)'));
+ assert.ok(app.includes("queueBattleSupport('guard',h,z,z.hp,'baluarte')"));
+ assert.ok(scene.includes("ability:event.ability||null"));
+ assert.ok(popup.includes("const ability=String(options.ability||'').toLowerCase()"));
+ for(const skill of ['levante','partilha','sombra','martelo','canto','rede','brasa','baluarte'])
+   assert.ok(popup.includes(skill+':'),'missing visual label for '+skill);
+});
+test('ability showcase, runtime tests and browser tests remain reachable',()=>{
+ assert.ok(lab.includes('value="skills"'));
+ assert.ok(lab.includes("mode==='skills'?abilityShowcase"));
+ assert.doesNotThrow(()=>new vm.Script(read('tests/cinematic-runtime.test.js')));
+ assert.doesNotThrow(()=>new vm.Script(read('tests/browser-smoke.cjs')));
+});
