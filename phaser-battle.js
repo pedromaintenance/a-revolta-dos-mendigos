@@ -227,8 +227,8 @@ function canPresent(){
 }
 function playEvents(events,onDone){
  if(!Array.isArray(events)||!events.length||!canPresent()||visualBusy)return false;
- const scene=game.scene.getScene('battle'),playbackToken=token,queue=events.slice();
- visualBusy=true;scene._duelBusy=true;let finished=false;
+ const scene=game.scene.getScene('battle'),playbackToken=token,queue=events.slice(),total=queue.length;
+ visualBusy=true;scene._duelBusy=true;let finished=false;let played=0;
  const finish=()=>{
   if(finished)return;finished=true;visualBusy=false;
   if(scene?.sys?.isActive())scene._duelBusy=false;
@@ -240,7 +240,8 @@ function playEvents(events,onDone){
   try{window.RevoltBattlePopup.play(scene,{
    before:{units:[event.attackerBefore,event.defenderBefore]},
    after:{units:[event.attackerAfter,event.defenderAfter]},
-   attackerId:event.attackerBefore.id,defenderId:event.defenderBefore.id,onDone:next
+   attackerId:event.attackerBefore.id,defenderId:event.defenderBefore.id,
+   sequencePosition:++played,sequenceTotal:total,onSkipAll:finish,onDone:next
   });}catch(error){console.error('Erro no evento cinematográfico:',error);next()}
  };
  next();return true;
