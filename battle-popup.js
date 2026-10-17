@@ -93,8 +93,20 @@ function play(scene,options){
     delay(1550,finish);
     return;
   }
-  delay(220,()=>{eventTitle.setText(a.name+' ATACA!');scene.tweens.add({targets:attacker.c,x:xAtt+(allyLeft?65:-65),duration:160,yoyo:true,hold:90,ease:'Sine.easeOut'});});
-  delay(400,()=>{
+  // Telegraph the strike before lunging: the weapon lifts and swings, not only the body.
+  delay(110,()=>{
+    eventTitle.setText(a.name+' PREPARA O GOLPE');
+    scene.tweens.add({targets:attacker.weapon,angle:allyLeft?-62:62,duration:160,ease:'Sine.easeOut'});
+    scene.tweens.add({targets:attacker.c,y:yChar-7,duration:150,yoyo:true});
+  });
+  delay(320,()=>{
+    eventTitle.setText(a.name+' ATACA!');
+    scene.tweens.add({targets:attacker.c,x:xAtt+(allyLeft?65:-65),duration:180,yoyo:true,hold:100,ease:'Quad.easeOut'});
+    scene.tweens.add({targets:attacker.weapon,angle:allyLeft?78:-78,duration:155,ease:'Cubic.easeIn',onComplete:()=>{
+      scene.tweens.add({targets:attacker.weapon,angle:allyLeft?10:-10,duration:300});
+    }});
+  });
+  delay(515,()=>{
     slash(xDef,241,0xffd598);
     scene.cameras.main.shake(105,.004);
     scene.tweens.add({targets:flash,alpha:.5,duration:60,yoyo:true});
@@ -105,8 +117,12 @@ function play(scene,options){
   });
   let endTime=1150;
   if(counter>0&&dAfter.hp>0){
-    delay(1100,()=>{eventTitle.setText('CONTRA-ATAQUE!');scene.tweens.add({targets:defender.c,x:xDef+(allyLeft?-60:60),duration:155,yoyo:true,hold:75});});
-    delay(1310,()=>{
+    delay(1160,()=>{
+      eventTitle.setText('CONTRA-ATAQUE!');
+      scene.tweens.add({targets:defender.weapon,angle:allyLeft?62:-62,duration:120,yoyo:true});
+      scene.tweens.add({targets:defender.c,x:xDef+(allyLeft?-60:60),duration:175,yoyo:true,hold:75});
+    });
+    delay(1380,()=>{
       slash(xAtt,241,0xd9a7f7);
       scene.cameras.main.shake(100,.003);
       updateBar(aFill,aVal,xAtt,aAfter.hp,a.maxhp,counter);
