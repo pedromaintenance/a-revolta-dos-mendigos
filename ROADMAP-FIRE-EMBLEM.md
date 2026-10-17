@@ -481,3 +481,29 @@ O núcleo `tactical-core.js` foi avaliado em JavaScript em cinco verificações:
 4. Testar um combate da campanha sem alterações no progresso salvo.
 
 **Próximo marco:** spritesheets autorais e testes de renderização automatizados; posteriormente, migração gradual das batalhas da campanha para movimentação em grade.
+
+## Entrega T2.13 — assinaturas mágicas individuais v19 (17/10/2026)
+
+**Publicação:** branch `main`, release v19; [laboratório](https://pedromaintenance.github.io/a-revolta-dos-mendigos/tactical-lab.html).
+
+### Implementado
+- `battle-popup.js`: eventos de ataque com cajado ganharam uma camada procedural de partículas em duas fases (`cast` na preparação e `hit` no impacto), sem alterar o cálculo de dano.
+- **Vega:** brasas alaranjadas ascendem ao redor da conjuração e explodem no alvo; **Olmo:** notas musicais esverdeadas flutuam no campo; **Marga:** partículas douradas e halo luminoso. Outros conjuradores permanecem com efeito etéreo violeta.
+- Os motivos são selecionados por ID do personagem e usam Phaser Graphics/text/círculos locais, sem imagens ou fontes adicionais; continuam subordinados ao cut-in e desaparecem ao final.
+- `tactical-lab.html`: opção **Arcanos: Vega, Olmo e Marga**, reproduzindo os três ataques em sequência, independentemente do save.
+- `tests/cinematic-contract.test.js`: verificação de presença dos três motivos e dos disparos nas fases de preparação e impacto.
+- Scripts `?v=19` e cache `revolta-cache-v19` publicados. Não foram modificados PV, IA, turnos, XP ou estrutura do salvamento.
+
+### QA e limites
+- Sintaxe de `battle-popup.js`, `app.js`, `sw.js`, `tests/cinematic-contract.test.js` e script inline do laboratório validada após os commits; versões de HTML e cache conferidas.
+- Não foi realizado teste visual do Pages no navegador nesta entrega; a execução bem-sucedida do GitHub Actions também não foi confirmada.
+- A assinatura visual é atribuída a ataques por cajado identificados pelo personagem, e **não introduz uma nova mecânica de magia**; curas usam seus efeitos próprios já existentes.
+- Sprites continuam pixel-art procedural e o mapa em grade segue experimental, separado da campanha de 42 dias.
+
+### Aceite
+1. No laboratório, escolher **Arcanos: Vega, Olmo e Marga** e pressionar Reproduzir.
+2. Comparar brasas, notas musicais e partículas douradas; confirmar que efeitos acontecem durante conjuração e impacto, com marcador EVENTO X/3.
+3. Testar PRÓXIMO e PULAR TUDO e verificar retorno normal ao mapa.
+4. Conferir ataques comuns, golpe final e cura, além de combates canônicos no Pages.
+
+**Próximo marco:** testes visuais automatizados em navegador e spritesheets autorais; introduzir metadados de animação por habilidade, em vez de depender apenas do ID do personagem.
