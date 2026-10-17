@@ -86,3 +86,12 @@ test('all eight canonical hero profiles and roster showcase exist',()=>{
  assert.ok(popup.includes("weaponType==='spear'"));
  assert.ok(popup.includes("weaponType==='shield'"));
 });
+
+test('weapon animation timing and effects remain defined',()=>{
+ for(const kind of ['dagger','hammer','spear','staff','shield'])
+  assert.ok(popup.includes("style==='"+kind+"'"),'missing attack archetype '+kind);
+ assert.ok(popup.includes('const impact=release+'));
+ assert.ok(popup.includes('delay(impact,()=>'));
+ assert.ok(popup.includes('endTime=impact+'));
+ assert.ok(popup.includes('targets:attacker.weapon'));
+});
