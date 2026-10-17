@@ -1,0 +1,59 @@
+/* Node smoke tests for the browser cinematic contract.
+ * Run: node tests/cinematic-contract.test.js
+ * These are deterministic integration/contract checks, NOT browser visual QA.
+ */
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const read=name=>fs.readFileSync(path.join(__dirname,'..',name),'utf8');
+const app=read('app.js'),scene=read('phaser-battle.js'),popup=read('battle-popup.js');
+const lab=read('tactical-lab.html');
+const html=read('index.html'),sw=read('sw.js');
+const test=(name,fn)=>{fn();process.stdout.write('PASS '+name+'\n')};
+test('all active browser scripts parse',()=>{
+ for(const file of ['app.js','phaser-battle.js','battle-popup.js','sw.js','tactical-core.js'])
+  assert.doesNotThrow(()=>new vm.Script(read(file),{filename:file}));
+ const inline=lab.match(/<script>\s*([\s\S]*?)<\/script>/);
+ assert.ok(inline,'inline tactical lab script');
+ assert.doesNotThrow(()=>new vm.Script(inline[1]));
+});
+test('main release and service worker share version',()=>{
+ const version=html.match(/app\.js\?v=(\d+)/)?.[1];
+ assert.ok(version,'app version');
+ assert.ok(html.includes('phaser-battle.js?v='+version));
+ assert.ok(html.includes('battle-popup.js?v='+version));
+ assert.ok(sw.includes('revolta-cache-v'+version));
+ assert.ok(sw.includes("'./battle-popup.js'"));
+});
+test('rules engine queues all three event kinds',()=>{
+ assert.ok(app.includes("queueBattleSupport('heal'"));
+ assert.ok(app.includes("queueBattleSupport('guard'"));
+ assert.ok(app.includes('battleVisualEvents.push({attackerBefore:source'));
+ assert.ok(app.includes("if(started)battleVisualEvents.splice(0,events.length)"));
+});
+test('renderer passes event kind, keeps skip controls',()=>{
+ assert.ok(scene.includes("kind:event.kind||'attack'"));
+ assert.ok(scene.includes('onSkipAll:finish'));
+ assert.ok(popup.includes("kind==='heal'"));
+ assert.ok(popup.includes("kind==='guard'"));
+ assert.ok(popup.includes('options.onSkipAll()'));
+});
+test('direct previews are discoverable and isolated',()=>{
+ assert.ok(lab.includes('id="demoType"'));
+ for(const choice of ['attack','heal','guard','sequence'])
+  assert.ok(lab.includes('value="'+choice+'"'));
+ assert.ok(lab.includes('function demoEvents(mode)'));
+ assert.ok(!lab.includes("localStorage.setItem("));
+});
+test('tactical core remains deterministic',()=>{
+ const sandbox={};vm.createContext(sandbox);vm.runInContext(read('tactical-core.js'),sandbox);
+ const T=sandbox.RevoltTactics;
+ assert.equal(T.passable(4,3),true);
+ assert.equal(T.passable(4,5),false);
+ let s=T.initial();s.units[0].x=7;s.units[0].y=3;s=T.dispatch(s,{type:'select',id:'coto'});
+ s=T.dispatch(s,{type:'attack'});
+ assert.equal(s.units[1].hp,18);
+ assert.equal(s.units[0].hp,26);
+});
