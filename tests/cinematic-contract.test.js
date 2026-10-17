@@ -74,3 +74,15 @@ test('finisher and enemy cinematic previews are available',()=>{
  assert.ok(popup.includes("'✦ GOLPE FINAL ✦'"));
  assert.ok(popup.includes('FOI DERROTADO'));
 });
+
+test('all eight canonical hero profiles and roster showcase exist',()=>{
+ for(const id of ['coto','marga','iria','silas','olmo','dara','vega','lorena']){
+  assert.ok(popup.includes(id+':{coat:'),'missing palette for '+id);
+  assert.ok(lab.includes("['"+id+"',"),'missing showcase for '+id);
+ }
+ assert.ok(lab.includes('value="roster"'));
+ assert.ok(popup.includes("weaponType==='hammer'"));
+ assert.ok(popup.includes("weaponType==='dagger'"));
+ assert.ok(popup.includes("weaponType==='spear'"));
+ assert.ok(popup.includes("weaponType==='shield'"));
+});
