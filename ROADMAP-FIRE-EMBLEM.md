@@ -349,3 +349,23 @@ O núcleo `tactical-core.js` foi avaliado em JavaScript em cinco verificações:
 - Em seguida, no jogo principal, testar Defender/Curativo e um ataque letal; verificar que o save permanece intacto.
 
 **Próximo marco recomendado:** executar os testes Node em CI, automatizar testes em navegador, implementar spritesheets originais e só então acrescentar efeitos de magia complexa. O laboratório de QA não deve substituir a validação da campanha real.
+
+## Entrega T2.8 — CI de combate + arma animada (17/10/2026)
+
+**Release publicada:** v14, branch `main`.
+
+### Evolução implementada
+- Adicionada `.github/workflows/combat-tests.yml`, com GitHub Actions em alterações relevantes no `main`, pull requests e execução manual. Node.js 22 executa `tests/tactics.test.js` e `tests/cinematic-contract.test.js`; o job falha se alguma asserção falhar. **O workflow foi enviado, mas seu resultado no Actions ainda precisa ser conferido**; commit não significa teste verde.
+- `battle-popup.js`: animação de golpe mais legível, com preparação/levantamento da arma, avanço do combatente, rotação de espada e recuperação da pose. Contra-ataque recebe antecipação própria. Dano, PV e regras continuam 100% controlados pelo motor original e não pela animação.
+- `index.html` e laboratório tático usam scripts `?v=14`; PWA migra para `revolta-cache-v14`.
+
+### Aceite
+1. Verificar na aba [Actions](https://github.com/pedromaintenance/a-revolta-dos-mendigos/actions/workflows/combat-tests.yml) se os jobs de teste terminaram verdes.
+2. Abrir [laboratório tático](https://pedromaintenance.github.io/a-revolta-dos-mendigos/tactical-lab.html), escolher ataque + contra-ataque e observar a arma antecipar e desferir o golpe (além do deslocamento do corpo).
+3. Reproduzir a sequência mista; PULAR TUDO não altera PV nem trava.
+4. Na campanha, testar curativo e golpe letal, conferir salvamento, transição e ausência de golpes duplicados.
+5. Reabrir PWA instalada para conferir atualização de cache.
+
+**Limites:** ainda são figuras geométricas, não spritesheets autorais; nenhuma garantia de Phaser offline por depender de CDN. Sintaxe e testes de contrato não substituem teste visual real. O roadmap de Fire Emblem ainda precisa concluir movimento em grade na campanha principal, arte definitiva e cenários.
+
+**Próxima prioridade:** incorporar teste de navegador automatizado e melhorar o estado visual dos ataques, evitando descompasso de PV quando uma sequência longa termina.
