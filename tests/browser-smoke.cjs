@@ -9,7 +9,7 @@ const path=require('node:path');
 const {chromium}=require('playwright');
 const BASE=process.env.TEST_BASE_URL||'http://127.0.0.1:4173';
 const OUT=path.join(__dirname,'..','artifacts','browser');
-const modes=['attack','heal','guard','finisher','enemy','skills'];
+const modes=['attack','heal','guard','finisher','enemy','skills','poses'];
 (async()=>{
  fs.mkdirSync(OUT,{recursive:true});
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
@@ -26,15 +26,21 @@ const modes=['attack','heal','guard','finisher','enemy','skills'];
   const bounds=await canvas.boundingBox();
   assert.ok(bounds?.width>100&&bounds?.height>100,'canvas should be visible');
   const coordinate=(x,y)=>({x:x*bounds.width/420,y:y*bounds.height/460});
+  assert.equal(await page.evaluate(()=>typeof window.RevoltPixelFrames?.createFighter),'function',
+   'local sprite atlas module must be loaded');
   for(const mode of modes){
    await page.selectOption('#demoType',mode);
+   const poseBefore=await page.evaluate(()=>window.RevoltPixelFrames.stats());
    const baseline=await canvas.screenshot();
    await page.click('#demo');
    await page.waitForTimeout(570);
    assert.equal(await page.locator('#demo').isDisabled(),true,'popup should lock buttons: '+mode);
+   const poseAfter=await page.evaluate(()=>window.RevoltPixelFrames.stats());
+   assert.ok(poseAfter.actors>poseBefore.actors,'Phaser texture actors should be created: '+mode);
+   assert.ok(poseAfter.changes>poseBefore.changes,'sprite frames should change during cut-in: '+mode);
    const visual=await canvas.screenshot({path:path.join(OUT,mode+'.png')});
    assert.ok(!visual.equals(baseline),'cinematic canvas did not change: '+mode);
-   await canvas.click({position:coordinate(mode==='skills'?91:335,390),timeout:10000});
+   await canvas.click({position:coordinate(['skills','poses'].includes(mode)?91:335,390),timeout:10000});
    await page.waitForFunction(()=>!document.querySelector('#demo').disabled,null,{timeout:10000});
    assert.match(await page.locator('#info').textContent(),/Turno/);
    console.log('PASS browser cinematic '+mode);
