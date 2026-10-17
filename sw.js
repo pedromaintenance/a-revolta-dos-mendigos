@@ -1,1 +1,27 @@
-N«z«²×~)^­çŞ­éÜz+'¢×.®·§¶\¯ŠÈ›•å,yø¥zËj·!¢·â•ë%ŠËm¢·ŠÇ(½êí…çâ•ëazzŞ¶¼°ŠØZ­ën®w­çâvŠßŠW¢
+/* Revolta dos Mendigos â€” service worker v2. Phaser usa CDN; campanha clÃ¡ssica permanece offline. */
+'use strict';
+const CACHE='revolta-cache-v2';
+const CORE=['./','./index.html','./style.css','./data.js','./app.js','./phaser-battle.js','./manifest.webmanifest','./icons/icon-192.png'];
+self.addEventListener('install',event=>{
+ event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate',event=>{
+ event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('revolta-cache-')&&key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()]));
+});
+self.addEventListener('fetch',event=>{
+ const req=event.request;
+ if(req.method!=='GET'||new URL(req.url).origin!==self.location.origin)return;
+ const isDocument=req.mode==='navigate';
+ const isCode=/\.(?:html|js|css|webmanifest)(?:$|\?)/.test(new URL(req.url).pathname);
+ if(isDocument||isCode){
+  event.respondWith(fetch(req).then(response=>{
+   if(response.ok){const clone=response.clone();caches.open(CACHE).then(cache=>cache.put(req,clone)).catch(()=>{});}
+   return response;
+  }).catch(()=>caches.match(req).then(hit=>hit||caches.match('./index.html'))));
+ }else{
+  event.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(response=>{
+   if(response.ok){const clone=response.clone();caches.open(CACHE).then(cache=>cache.put(req,clone)).catch(()=>{});}
+   return response;
+  })));
+ }
+});
