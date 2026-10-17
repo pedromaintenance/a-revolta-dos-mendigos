@@ -326,3 +326,26 @@ Criar `BattleEventQueue` com eventos tipados `attack / damage / heal / guard / e
 6. Verificar regressões de vitória/derrota, PWA, Android e importação do save v1.
 
 **Próximo foco recomendado:** instrumentar testes de fluxo completo, transição de turnos e eventos de ação; introduzir spritesheets e animações locais por classe após testes em navegador.
+
+## Entrega T2.7 — laboratório de regressão cinematográfica v13 (17/10/2026)
+
+**Objetivo:** a prioridade desta versão é tornar os efeitos da campanha verificáveis sem exigência de percorrer vários dias, e criar cobertura de contratos básicos antes de ampliar o sistema.
+
+### Publicado em `main`
+- `tactical-lab.html`: seletor de **prévia cinematográfica** com quatro opções — ataque com contra-ataque, cura, defesa e **sequência mista de quatro eventos**. O usuário pode reproduzir os eventos sem mover Coto; as cenas usam dados fictícios explicitamente para QA e não gravam alterações na campanha nem no laboratório.
+- A sequência de QA exercita os mesmos callbacks `onDone` e `onSkipAll` do popup, assim como o marcador de progresso **EVENTO X/Y**, para permitir avaliar `PRÓXIMO` e `PULAR TUDO`.
+- `tests/cinematic-contract.test.js`: novos testes Node para sintaxe de scripts, alinhamento entre versões de assets e service worker, existência dos três tipos de evento, encadeamento do popup, demonstrações e regras determinísticas de dano/contra-ataque do laboratório. Execução prevista: `node tests/cinematic-contract.test.js`.
+- Versões atualizadas para `?v=13` na campanha, `battle-popup.js?v=13` no laboratório e `revolta-cache-v13` na PWA. Esta entrega não altera as fórmulas de dano, os saves nem a campanha.
+
+### Smoke tests efetivamente executados durante a implementação
+O núcleo `tactical-core.js` foi avaliado em JavaScript em cinco verificações: água intransponível/ponte transitável, movimentação sem atravessar bloqueios, impossibilidade de ataque à distância, dano 10 + contra-ataque 6 em unidade adjacente e progressão de turno. **5/5 passaram.** Os testes adicionais de `tests/cinematic-contract.test.js` foram adicionados ao repositório, mas sua execução por Node/CI ainda deve ser confirmada.
+
+### Limitações e QA
+- Ainda sem automação de navegador para constatar visualmente os frames, gestos, sprites, travamentos e cache no Pages; não afirmar resolução dos relatos visuais anteriores.
+- Prévia demonstrativa usa combatentes provisórios e valores preparados, não o salvamento real.
+- Dano e condições da campanha seguem no `app.js`; o laboratório tático usa seu núcleo experimental separado.
+- O motor Phaser ainda vem de CDN, portanto o modo cinematográfico não tem garantia offline.
+- **Aceite no Pages:** abrir `/tactical-lab.html`, trocar as quatro opções e pressionar **Reproduzir**; avaliar cortes, PV, cores, marcador de evento, próximo e pular tudo, retornando ao mapa com comandos funcionando.
+- Em seguida, no jogo principal, testar Defender/Curativo e um ataque letal; verificar que o save permanece intacto.
+
+**Próximo marco recomendado:** executar os testes Node em CI, automatizar testes em navegador, implementar spritesheets originais e só então acrescentar efeitos de magia complexa. O laboratório de QA não deve substituir a validação da campanha real.
