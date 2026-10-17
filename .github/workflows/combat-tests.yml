@@ -26,6 +26,9 @@ on:
       - 'tests/**'
       - '.github/workflows/combat-tests.yml'
   workflow_dispatch:
+concurrency:
+  group: combat-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
