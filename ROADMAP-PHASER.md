@@ -256,3 +256,19 @@ A cena integrada `phaser-battle.js` tem agora **HUD Phaser interativo** de 420×
 - [ ] Planejar separação mais clara de `BattleScene` / `BattleUIScene`, inspirada no tutorial de Phaser
 
 **Verificado:** commits do GitHub e validação de sintaxe do script atualizado. **Não verificado:** comportamento real no Chrome, cache no dispositivo, características dos sprites carregados pela URL externa. O problema deve permanecer como **aguardando reteste** no roadmap.
+
+## Entrega v8 — combatentes menores e roster superior (16/10/2026)
+
+**Pedido:** sprites aproximadamente 20% menores, mais separados, apoiados visualmente no piso; nomes e estatísticas fora da arena, numa HUD superior; deixar somente a barra de vida próxima de cada personagem.
+
+**Publicada na `main`:**
+- Sprite Kenney de 3,05× → **2,44× (redução de 20%)**; escalas de formação também multiplicadas por 0,8 para reduzir a ocupação em batalhas com vários participantes. O fallback local geométrico foi encolhido proporcionalmente.
+- Ajustada âncora do sprite para a base (`origin(.5,1)`) e posição relativa `y=-8`; sombras ficam perto dos pés. Os combatentes foram reposicionados para a parte inferior do quadro, preservando a faixa de comandos em `y=409+`.
+- Novas formações diagonais com maior afastamento lateral e vertical, específicas para 1 a 4 unidades por facção.
+- **Roster/HUD superior separado por Corte e Resistência**, mostrando nome e PV atuais; item selecionado recebe destaque, e cada linha aceita clique/toque para escolher aliado ou alvo.
+- No campo de batalha, o HUD de cada unidade foi reduzido a uma pequena barra de vida colorida, sem nome ou números que sobreponham o sprite.
+- Nenhuma alteração das regras, da campanha e do formato de save. Cache PWA `revolta-cache-v8` e scripts `?v=8`.
+
+**Critérios de aceite para testar no Pages:** personagens visíveis, sem flutuar longe de suas sombras; roster do topo legível e selecionável; PV alterado no topo e na barra do personagem após golpes; sem sobreposição de personagens e ações com 1–4 unidades; sobrevivência da cena a vários turnos.
+
+**QA:** commit e sintaxe JS verificados; ainda falta teste visual em Chrome desktop/Android e confirmação de atualização do Pages. O Phaser e os sprites Kenney continuam carregados de domínios externos e o modo Phaser offline não é garantido.
