@@ -1,10 +1,11 @@
 /* Phaser combat viewport — the original app.js remains the sole rules engine. */
 (function(){
 'use strict';
-let game=null,token=0,loading=null;
+let game=null,token=0,loading=null,lastSnapshot=null;
+const KENNEY='https://raw.githubusercontent.com/Two-Weeks-Team/openClawWorld/main/packages/client/public/assets/kenney/characters/characters_spritesheet.png';
 const SCRIPT='https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js';
 function engine(){if(window.Phaser)return Promise.resolve(true);if(loading)return loading;loading=new Promise(resolve=>{const s=document.createElement('script');s.src=SCRIPT;s.onload=()=>resolve(!!window.Phaser);s.onerror=()=>resolve(false);document.head.append(s)});return loading}
-function destroy(){token++;if(game){try{game.destroy(true)}catch(e){console.warn(e)}game=null}}
+function destroy(){token++;lastSnapshot=null;if(game){try{game.destroy(true)}catch(e){console.warn(e)}game=null}}
 function refresh(){
  if(!game||!game.scene)return;
  try{const scene=game.scene.getScene('battle');if(scene&&scene.sys.isActive())scene.scene.restart();}catch(e){console.error('Falha ao atualizar cena Phaser:',e)}
@@ -24,9 +25,14 @@ function mount(){
   root.textContent='';
   class Battle extends Phaser.Scene{
    constructor(){super({key:'battle'});}
+   preload(){if(!this.textures.exists('kenney'))this.load.image('kenney',KENNEY);}
    create(){
     const state=window.RevoltBattleBridge.snapshot();
     if(!state)return;
+    const previous=lastSnapshot?.day===state.day?lastSnapshot:null;
+    lastSnapshot=JSON.parse(JSON.stringify(state));
+    const spriteReady=this.textures.exists('kenney');
+    const unitsByKey=new Map();
     const g=this.add.graphics();
     // Compact, theatrical canal square; background stays visually behind the party.
     g.fillGradientStyle(0x101c2a,0x172333,0x28323b,0x28323b).fillRect(0,0,W,H);
@@ -48,47 +54,79 @@ function mount(){
     this.add.text(317,78,'A CORTE',{fontFamily:'monospace',fontSize:'10px',color:'#e1a6ac'}).setOrigin(.5);
     const acted=state.acted||[];
     function figure(scene,u,enemy,x,y,selected,scale=1){
-      const c=scene.add.container(x,y);c.setScale(scale);
-      const skin=enemy?0xd3b7a6:0xdcb99a,cloth=enemy?0x825464:(u.id==='coto'?0x598378:u.id==='marga'?0x937a56:u.id==='iria'?0x596e84:0x6b7f73);
-      const dark=enemy?0x342735:0x283b3a;
-      const pix=(px,py,w,h,color)=>scene.add.rectangle(px,py,w,h,color).setOrigin(0,0);
-      const shadow=scene.add.ellipse(0,8,56,11,0x080e14,.55);
-      const pieces=[shadow];
-      // 8-bit-inspired fighter silhouette: boots, legs, tunic, arms, neck, face, hair / helmet.
-      pieces.push(pix(-17,-13,13,22,dark),pix(5,-13,13,22,dark));
-      pieces.push(pix(-25,-49,50,37,cloth));
-      pieces.push(pix(-31,-43,8,29,dark),pix(23,-43,8,29,dark));
-      pieces.push(pix(-10,-56,20,8,skin),pix(-16,-79,32,26,skin));
-      pieces.push(pix(-18,-83,36,9,enemy?0x55515d:u.id==='marga'?0xa39a70:0x493b32));
-      pieces.push(pix(enemy?-10:3,-68,7,3,0x211f25));
-      if(enemy){pieces.push(pix(-22,-84,44,5,0x8c92a0),pix(26,-48,6,45,0xb4af9c));}
-      else if(u.id==='coto'){pieces.push(pix(30,-44,5,55,0xc2c0a8),pix(24,-38,17,6,0x98794f));}
-      else if(u.id==='marga'){pieces.push(pix(-35,-30,18,13,0xc1ad82),pix(-29,-34,6,5,0xe0d8bd));}
-      else{pieces.push(pix(27,-44,5,34,0xaeb5ae));}
-      if(!u.hp){const grey=scene.add.rectangle(0,-37,66,96,0x141820,.58);pieces.push(grey);}
-      c.add(pieces);
-      if(selected){const ring=scene.add.ellipse(0,12,71,16).setStrokeStyle(3,0xf4d388);c.add(ring);}
+      const c=scene.add.container(x,y);c.setDepth(10);c.setScale(scale);
+      const shadow=scene.add.ellipse(0,6,65,12,0x02080e,.57);
+      c.add(shadow);
+      let actor;
+      if(spriteReady){
+        // Kenney's sheet contains front-facing, layered 16px sprites.
+        // Use base characters from first columns; preserve original colors.
+        const heroRows={coto:4,marga:9,iria:8,silas:5,olmo:7,dara:10,vega:11,lorena:3};
+        const foeRows={guarda:2,arqueiro:3,carcereiro:5,sabujo:0,lancas:3,espectro:11,carniceiro:5,bruxa:9,cavaleiro:5,ulorian:11};
+        const row=enemy?(foeRows[u.key]??((Number(u.id)||0)%9+1)):(heroRows[u.id]??4);
+        const col=enemy?1:0;
+        const frame='kenney-'+col+'-'+row;
+        if(!scene.textures.get('kenney').has(frame))scene.textures.get('kenney').add(frame,0,col*17,row*17,16,16);
+        actor=scene.add.image(0,-44,'kenney',frame).setScale(4.3).setOrigin(.5,.8);
+        actor.setTexture('kenney',frame);
+        if(enemy)actor.setFlipX(true);
+        c.add(actor);
+      }else{
+        // Temporary fallback if the third-party asset cannot load.
+        actor=scene.add.rectangle(0,-41,43,66,enemy?0x795165:0x587f72).setStrokeStyle(3,0x231e25);
+        c.add([actor,scene.add.circle(0,-81,17,0xd5b99c)]);
+      }
+      if(u.hp<=0)c.setAlpha(.35);
+      if(selected){
+        const marker=scene.add.ellipse(0,9,77,17).setStrokeStyle(3,0xe6bd69);
+        c.add(marker);
+        scene.tweens.add({targets:marker,alpha:.4,duration:470,yoyo:true,repeat:-1});
+      }
+      if(u.guard)c.add(scene.add.text(-42,-95,'⬡',{fontFamily:'monospace',fontSize:'18px',color:'#dae8ff'}));
+      if(!enemy&&acted.includes(u.id))c.add(scene.add.text(29,-96,'✓',{fontFamily:'monospace',fontSize:'18px',color:'#f3cb80'}));
+      if(u.ward)c.add(scene.add.text(0,-109,'✧ SELO',{fontFamily:'monospace',fontSize:'10px',color:'#f2c4ff'}).setOrigin(.5));
       const max=Math.max(1,u.maxhp);
-      const hp=scene.add.rectangle(0,21,100,8,0x412c35);
-      const fg=scene.add.rectangle(-50,21,100*Math.max(0,Math.min(1,u.hp/max)),8,enemy?0xd1767c:0x88c7a0).setOrigin(0,.5);
-      const text=scene.add.text(0,34,u.name.length>22?u.name.slice(0,21)+'…':u.name,{fontFamily:'monospace',fontSize:'11px',color:'#f5e9d8',align:'center'}).setOrigin(.5);
-      const stat=scene.add.text(0,47,u.hp+'/'+u.maxhp+' PV'+(enemy?'':' · '+u.mp+' F'),{fontFamily:'monospace',fontSize:'10px',color:'#e5d2b5'}).setOrigin(.5);
-      c.add([hp,fg,text,stat]);
-      if(u.guard)c.add(scene.add.text(-45,-93,'⬡',{fontFamily:'monospace',fontSize:'17px',color:'#d2e0ff'}));
-      if(!enemy&&acted.includes(u.id))c.add(scene.add.text(32,-93,'✓',{fontFamily:'monospace',fontSize:'17px',color:'#f5cc76'}));
-      if(u.ward)c.add(scene.add.text(0,-98,'✧ SELO',{fontFamily:'monospace',fontSize:'10px',color:'#e2baff'}).setOrigin(.5));
-      const hit=scene.add.zone(x,y-20*scale,125,Math.max(65,135*scale)).setInteractive({useHandCursor:true});
+      const bg=scene.add.rectangle(0,22,106,9,0x332932).setStrokeStyle(1,0x9b8474);
+      const hp=scene.add.rectangle(-52,22,104*Math.max(0,Math.min(1,u.hp/max)),7,enemy?0xc76e7b:0x88caaa).setOrigin(0,.5);
+      const label=scene.add.text(0,36,u.name.length>22?u.name.slice(0,21)+'…':u.name,{fontFamily:'monospace',fontSize:'11px',color:'#f8e9d7',backgroundColor:'#19232c',align:'center'}).setOrigin(.5);
+      const stats=scene.add.text(0,51,u.hp+'/'+u.maxhp+' PV'+(enemy?'':'  '+u.mp+' F'),{fontFamily:'monospace',fontSize:'10px',color:'#ebd0a9'}).setOrigin(.5);
+      c.add([bg,hp,label,stats]);
+      const key=(enemy?'e':'h')+u.id;
+      unitsByKey.set(key,{c,actor,x,y});
+      const hit=scene.add.zone(x,y-35*scale,138,Math.min(100,110*scale)).setDepth(20).setInteractive({useHandCursor:true});
       hit.on('pointerdown',()=>{if(u.hp<=0)return;window.RevoltBattleBridge.command((enemy?'targetE:':'selectHero:')+u.id)});
-      if(selected){scene.tweens.add({targets:c,y:y-4,duration:450,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});}
+      scene.tweens.add({targets:c,y:y-2.5*scale,duration:900+((Number(u.id)||0)*117)%400,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     }
     // Two clearly separated columns, max four fighters each, no overlapping labels.
     const draw=(units,enemy)=>{
       const n=units.length;
-      const ys=n<=2?(n===1?[216]:[163,288]):n===3?[143,233,321]:[116,188,260,332];
-      const scale=n>=4?.67:n===3?.78:n===2?.91:1;
+      const ys=n<=2?(n===1?[235]:[184,306]):n===3?[161,250,339]:[140,211,282,351];
+      const scale=n>=4?.67:n===3?.78:n===2?.9:1;
       units.forEach((u,i)=>figure(this,u,enemy,enemy?316:104,ys[i]||216,state.selected===(enemy?'e':'h')+u.id,scale));
     };
     draw(state.heroes,false);draw(state.enemies,true);
+    // Transitions are derived from canonical HP changes, never from guessed damage.
+    if(previous){
+      const before=new Map([...previous.heroes.map(u=>['h'+u.id,u]),...previous.enemies.map(u=>['e'+u.id,u])]);
+      for(const current of [...state.heroes.map(u=>({...u,_key:'h'+u.id})),...state.enemies.map(u=>({...u,_key:'e'+u.id}))]){
+        const old=before.get(current._key),entry=unitsByKey.get(current._key);
+        if(!old||!entry||old.hp===current.hp)continue;
+        const delta=current.hp-old.hp,positive=delta>0;
+        const float=this.add.text(entry.x,entry.y-95,positive?'+'+delta:String(delta),{
+          fontFamily:'monospace',fontSize:'21px',fontStyle:'bold',color:positive?'#9deac0':'#ff858b',
+          stroke:'#101820',strokeThickness:4
+        }).setOrigin(.5).setDepth(90);
+        this.tweens.add({targets:float,y:float.y-46,alpha:0,duration:900,ease:'Cubic.easeOut',onComplete:()=>float.destroy()});
+        if(!positive){
+          this.cameras.main.shake(110,.002);
+          this.tweens.add({targets:entry.actor,alpha:.2,duration:65,yoyo:true,repeat:2});
+          this.tweens.add({targets:entry.c,x:entry.x+(current._key[0]==='e'?-10:10),duration:95,yoyo:true});
+        }else{
+          const ring=this.add.circle(entry.x,entry.y-43,16,0x8be5af,.36).setDepth(8);
+          this.tweens.add({targets:ring,scale:3,alpha:0,duration:420,onComplete:()=>ring.destroy()});
+        }
+      }
+    }
     g.fillStyle(0x131f2a).fillRect(0,370,W,150);
     g.lineStyle(2,0x957659).lineBetween(0,370,W,370);
     const targetEnemy=state.targetMode==='ataque'||state.targetMode==='skillEnemy';
