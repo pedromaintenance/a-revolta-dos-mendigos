@@ -226,3 +226,33 @@ A cena integrada `phaser-battle.js` tem agora **HUD Phaser interativo** de 420×
 **QA pendente:** renderização e toque em Android/desktop, legibilidade em grupos de quatro, animações após turnos e conferência de cache atualizado no GitHub Pages. Código submetido e sintaxe JavaScript verificada, mas não foi realizado teste funcional de navegador nesta entrega.
 
 **Roteiro curto:** abrir a batalha do dia 3, confirmar inimigos à esquerda e aliados à direita; verificar que cada unidade possui nome/HP próprio sem cobrir outros sprites; executar ataque e encerrar rodada; repetir com quatro unidades por facção.
+
+## Pesquisa de referências e hotfix v7 — estabilidade antes de estética (16/10/2026)
+
+**Evidência do jogador:** no primeiro combate, a barra do Coto é visível, mas seu personagem não; a arena tem excesso de espaços, duplicação de informações abaixo e uso irregular das imagens de personagens.
+
+### Referências técnicas consultadas
+- Documentação oficial Phaser — **Display List**: https://docs.phaser.io/phaser/concepts/gameobjects/display-list
+- Documentação oficial Phaser — **Depth e Containers**: https://docs.phaser.io/phaser/concepts/gameobjects/components
+- Documentação oficial Phaser — **Textures / Frames**: https://docs.phaser.io/phaser/concepts/textures
+- Tutorial de RPG por turnos em Phaser 3: https://gamedevacademy.org/how-to-create-a-turn-based-rpg-game-in-phaser-3-part-1/
+- Exemplo Phaser de combate por turnos: https://phaser.io/news/2018/02/turn-based-battle-system-tutorial
+
+**Decisão de arquitetura:** adotar elementos funcionais de JRPG clássico: camada do cenário separada da apresentação das unidades e controles, renderização determinística, informações visíveis independentemente do tamanho do sprite, sem reimplementar as regras do `app.js`. Não expandir efeitos ou menus até o desenho básico permanecer íntegro após refresh/turnos.
+
+### Correções publicadas na branch `main` (v7)
+- `phaser-battle.js`: verificações simples de alfa nas células 16×16 do spritesheet Kenney, em vez de assumir que toda coordenada selecionada tem imagem útil; busca determinística por outra linha da mesma coluna.
+- Se o arquivo externo ou a célula não produzir pixels suficientes, cria-se uma silhueta local legível (corpo, rosto, cabelo e pernas) para **evitar herói invisível**.
+- Camada `Graphics` do cenário recebe `depth=-1000`, unidades `100+y`, painéis de informação `800`, áreas de toque `900`; assim a ordem de renderização fica explícita.
+- Incremento do cache para `revolta-cache-v7` e scripts `?v=7` para que o Pages e a PWA possam buscar a versão nova.
+
+### QA / critérios para próxima entrega
+- [ ] Todos os heróis e inimigos visíveis no dia 1 e no dia 3, incluindo Coto
+- [ ] Confirmar ausência de recobrimento dos personagens pelo piso ou pelo HUD
+- [ ] Verificar seleção de personagem/alvo no toque
+- [ ] Confirmação visual do Pages em dispositivo real
+- [ ] Refatorar o HUD duplicado (HTML/Phaser) só depois que o comportamento básico for comprovado
+- [ ] Substituir colunas manuais de atlas por imagens locais com frames certificados
+- [ ] Planejar separação mais clara de `BattleScene` / `BattleUIScene`, inspirada no tutorial de Phaser
+
+**Verificado:** commits do GitHub e validação de sintaxe do script atualizado. **Não verificado:** comportamento real no Chrome, cache no dispositivo, características dos sprites carregados pela URL externa. O problema deve permanecer como **aguardando reteste** no roadmap.
