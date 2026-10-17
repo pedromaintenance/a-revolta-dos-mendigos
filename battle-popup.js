@@ -157,6 +157,31 @@ function play(scene,options){
     delay(1550,finish);
     return;
   }
+  // Character-specific arcana. Presentation only: no damage or state changes.
+  const casterId=String(a.id||'').toLowerCase().replace(/^source-|^hero-/,'');
+  const arcana=casterId.includes('vega')?'embers':casterId.includes('olmo')?'chorus':casterId.includes('marga')?'blessing':'ether';
+  function magicMotif(x,y,phase){
+    if(!spell)return;
+    const tint=arcana==='embers'?0xf28a58:arcana==='chorus'?0xa0d5ba:arcana==='blessing'?0xe7d298:0xbaa6e9;
+    const count=phase==='cast'?7:11;
+    for(let i=0;i<count;i++){
+      const angle=(Math.PI*2*i/count)+(phase==='cast'?0:.23);
+      const radius=phase==='cast'?24:31;
+      const px=x+Math.cos(angle)*radius,py=y+Math.sin(angle)*radius*.65;
+      const sprite=arcana==='chorus'?text(px,py,i%2?'♪':'♫',17,'#b7efd5')
+        :add(scene.add.circle(px,py,arcana==='embers'?5:3,tint,.86));
+      scene.tweens.add({targets:sprite,
+        x:px+Math.cos(angle)*(phase==='cast'?14:35),
+        y:py+(arcana==='embers'?-35:arcana==='chorus'?-25:-16),
+        alpha:0,scale:arcana==='embers'?.55:1.5,
+        duration:phase==='cast'?440:670,
+        ease:'Sine.easeOut',onComplete:()=>sprite.destroy()});
+    }
+    if(phase==='hit'){
+      const halo=add(scene.add.circle(x,y,19,tint,.12).setStrokeStyle(3,tint,.8));
+      scene.tweens.add({targets:halo,scale:3,alpha:0,duration:530,onComplete:()=>halo.destroy()});
+    }
+  }
   // Weapon-specific telegraphs: each archetype has a recognizable rhythm.
   const style=attacker.weaponType;
   const fast=style==='dagger',heavy=style==='hammer',pierce=style==='spear';
@@ -170,7 +195,8 @@ function play(scene,options){
     scene.tweens.add({targets:attacker.weapon,angle:spell?0:heavy?(allyLeft?-110:110):pierce?(allyLeft?-22:22):(allyLeft?-62:62),duration:heavy?230:130,ease:'Sine.easeOut'});
     scene.tweens.add({targets:attacker.c,y:yChar-(heavy?15:7),duration:140,yoyo:true});
     if(spell){
-      const charge=add(scene.add.circle(xAtt,yChar-86,12,0xb9a0f0,.38));
+      magicMotif(xAtt,yChar-76,'cast');
+      const charge=add(scene.add.circle(xAtt,yChar-86,12,arcana==='embers'?0xf28a58:arcana==='chorus'?0x9dcdb7:0xd6b9e3,.38));
       scene.tweens.add({targets:charge,scale:2.3,alpha:0,duration:470,onComplete:()=>charge.destroy()});
     }
   });
@@ -184,6 +210,7 @@ function play(scene,options){
     if(fast)scene.tweens.add({targets:attacker.c,alpha:.42,duration:70,yoyo:true,repeat:1});
   });
   delay(impact,()=>{
+    if(spell)magicMotif(xDef,241,'hit');
     slash(xDef,241,spell?0xc4a5ff:heavy?0xffa577:pierce?0xb4d6db:fast?0xf6d9e7:0xffd598);
     scene.cameras.main.shake(heavy?195:105,heavy?.008:.004);
     scene.tweens.add({targets:flash,alpha:heavy?.7:.5,duration:heavy?100:60,yoyo:true});
