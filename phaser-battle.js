@@ -4,7 +4,11 @@
 let game=null,token=0,loading=null;
 const SCRIPT='https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js';
 function engine(){if(window.Phaser)return Promise.resolve(true);if(loading)return loading;loading=new Promise(resolve=>{const s=document.createElement('script');s.src=SCRIPT;s.onload=()=>resolve(!!window.Phaser);s.onerror=()=>resolve(false);document.head.append(s)});return loading}
-function destroy(){token++;if(game){game.destroy(true);game=null}}
+function destroy(){token++;if(game){try{game.destroy(true)}catch(e){console.warn(e)}game=null}}
+function refresh(){
+ if(!game||!game.scene)return;
+ try{const scene=game.scene.getScene('battle');if(scene&&scene.sys.isActive())scene.scene.restart();}catch(e){console.error('Falha ao atualizar cena Phaser:',e)}
+}
 function mount(){
  const host=document.getElementById('phaser-battle');if(!host||!window.RevoltBattleBridge)return;
  const my=++token;
@@ -22,7 +26,8 @@ function mount(){
   class Battle extends Phaser.Scene{
    constructor(){super({key:'battle'});}
    create(){
-    const sc=this;
+    const state=window.RevoltBattleBridge.snapshot();
+    if(!state)return;
     const g=this.add.graphics();
     g.fillGradientStyle(0x182534,0x182534,0x282c36,0x282c36).fillRect(0,0,W,H);
     g.fillStyle(0x202d39).fillRect(0,60,W,182);
@@ -85,12 +90,18 @@ function mount(){
     }
     control(210,592,390,'ENCERRAR RODADA · VEZ DA CORTE','enemyTurn',!waiting);
     this.add.text(W/2,626,'AUXÍLIOS SOBRENATURAIS E REGISTRO ABAIXO',{fontFamily:'monospace',fontSize:'10px',color:'#c8b294'}).setOrigin(.5);
-    root.classList.remove('phaser-loading');
-    root.classList.add('phaser-ready');
+    this.game.events.once('postrender',()=>{
+      if(my!==token||!root.isConnected)return;
+      const canvas=this.game.canvas;
+      if(canvas&&canvas.isConnected&&canvas.width>0&&canvas.height>0){
+       root.classList.remove('phaser-loading');
+       root.classList.add('phaser-ready');
+      }
+    });
    }
   }
-  try{game=new Phaser.Game({type:Phaser.AUTO,parent:root,width:W,height:H,transparent:false,backgroundColor:'#16202e',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_HORIZONTALLY},render:{pixelArt:true,antialias:false},scene:[Battle]});}catch(e){root.classList.remove('phaser-ready','phaser-loading');root.textContent='Erro no Phaser; controles clássicos disponíveis.';game=null;console.error('Phaser combat fallback:',e)}
+  try{game=new Phaser.Game({type:Phaser.CANVAS,parent:root,width:W,height:H,transparent:false,backgroundColor:'#16202e',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_HORIZONTALLY},render:{pixelArt:true,antialias:false},scene:[Battle]});}catch(e){root.classList.remove('phaser-ready','phaser-loading');root.textContent='Erro no Phaser; controles clássicos disponíveis.';game=null;console.error('Phaser combat fallback:',e)}
  });
 }
-window.PhaserBattle={mount,destroy};
+window.PhaserBattle={mount,destroy,refresh};
 })();
