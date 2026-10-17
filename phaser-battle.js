@@ -32,8 +32,9 @@ function mount(){
     const previous=lastSnapshot?.day===state.day?lastSnapshot:null;
     lastSnapshot=JSON.parse(JSON.stringify(state));
     const spriteReady=this.textures.exists('kenney');
+    const hasVisiblePixels=(col,row)=>{if(!spriteReady)return false;let count=0;for(let py=1;py<16;py+=2)for(let px=1;px<16;px+=2){if((this.textures.getPixelAlpha(col*17+px,row*17+py,'kenney')||0)>40)count++;}return count>=5;};
     const unitsByKey=new Map();
-    const g=this.add.graphics();
+    const g=this.add.graphics().setDepth(-1000);
     // Compact, theatrical canal square; background stays visually behind the party.
     g.fillGradientStyle(0x101c2a,0x172333,0x28323b,0x28323b).fillRect(0,0,W,H);
     g.fillStyle(0x1f2d37).fillRect(0,55,W,275);
@@ -64,17 +65,32 @@ function mount(){
         const heroRows={coto:4,marga:9,iria:8,silas:5,olmo:7,dara:10,vega:11,lorena:3};
         const foeRows={guarda:2,arqueiro:3,carcereiro:5,sabujo:0,lancas:3,espectro:11,carniceiro:5,bruxa:9,cavaleiro:5,ulorian:11};
         const row=enemy?(foeRows[u.key]??((Number(u.id)||0)%9+1)):(heroRows[u.id]??4);
-        const col=enemy?1:0;
-        const frame='kenney-'+col+'-'+row;
-        if(!scene.textures.get('kenney').has(frame))scene.textures.get('kenney').add(frame,0,col*17,row*17,16,16);
-        actor=scene.add.image(0,-44,'kenney',frame).setScale(3.05).setOrigin(.5,.8);
-        actor.setTexture('kenney',frame);
-        if(enemy)actor.setFlipX(true);
-        c.add(actor);
-      }else{
-        // Temporary fallback if the third-party asset cannot load.
-        actor=scene.add.rectangle(0,-41,43,66,enemy?0x795165:0x587f72).setStrokeStyle(3,0x231e25);
-        c.add([actor,scene.add.circle(0,-81,17,0xd5b99c)]);
+        let col=enemy?1:0;
+        // Avoid transparent cells in externally supplied tilesheets.
+        // Deterministic search keeps the same appearance after scene restarts.
+        let actualRow=row;
+        if(!hasVisiblePixels(col,actualRow)){
+          const possibilities=Array.from({length:16},(_,i)=>(row+i)%16);
+          const available=possibilities.find(candidate=>hasVisiblePixels(col,candidate));
+          if(available!==undefined)actualRow=available;
+        }
+        const valid=hasVisiblePixels(col,actualRow);
+        const frame='kenney-'+col+'-'+actualRow;
+        if(valid){
+          if(!scene.textures.get('kenney').has(frame))scene.textures.get('kenney').add(frame,0,col*17,actualRow*17,16,16);
+          actor=scene.add.image(0,-44,'kenney',frame).setScale(3.05).setOrigin(.5,.8);
+          if(enemy)actor.setFlipX(true);
+          c.add(actor);
+        }
+      }
+      if(!actor){
+        // Never allow an invisible unit: draw a readable local silhouette.
+        actor=scene.add.container(0,-42);
+        const coat=scene.add.rectangle(0,1,37,41,enemy?0x835460:0x568579).setStrokeStyle(2,0x20252c);
+        const face=scene.add.rectangle(0,-29,26,21,0xdab598);
+        const hair=scene.add.rectangle(0,-41,30,8,enemy?0x6a6e78:0x513d34);
+        const legs=[scene.add.rectangle(-10,29,12,17,0x333a40),scene.add.rectangle(10,29,12,17,0x333a40)];
+        actor.add([coat,face,hair,...legs]);c.add(actor);
       }
       if(u.hp<=0)c.setAlpha(.35);
       if(selected){
@@ -97,7 +113,7 @@ function mount(){
       hud.add([panel,hpBack,hpFill,label,stats]);
       const key=(enemy?'e':'h')+u.id;
       unitsByKey.set(key,{c,actor,x,y});
-      const hit=scene.add.zone(x,y-31*scale,104,Math.min(64,88*scale)).setDepth(20).setInteractive({useHandCursor:true});
+      const hit=scene.add.zone(x,y-31*scale,104,Math.min(64,88*scale)).setDepth(900).setInteractive({useHandCursor:true});
       hit.on('pointerdown',()=>{if(u.hp<=0)return;window.RevoltBattleBridge.command((enemy?'targetE:':'selectHero:')+u.id)});
       scene.tweens.add({targets:c,y:y-2.5*scale,duration:900+((Number(u.id)||0)*117)%400,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     }
