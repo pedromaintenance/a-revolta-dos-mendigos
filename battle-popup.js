@@ -35,13 +35,26 @@ function play(scene,options){
   function makeFighter(u,x,faceRight){
     const c=add(scene.add.container(x,yChar));
     const id=String(u.id||'').toLowerCase(),name=String(u.name||'').toLowerCase();
+    // Distinct visual identities for the eight canonical heroes.
+    const heroId=['coto','marga','iria','silas','olmo','dara','vega','lorena'].find(key=>id.includes(key));
+    const heroPalette={
+      coto:{coat:0x587e71,shadow:0x354e48,detail:0xd2b77b,hair:0x6b503b,weapon:'sword'},
+      marga:{coat:0x7b7254,shadow:0x504a3b,detail:0xc6a77d,hair:0x8e6c52,weapon:'staff'},
+      iria:{coat:0x514d67,shadow:0x343446,detail:0xb4a1be,hair:0x252735,weapon:'dagger'},
+      silas:{coat:0x74716a,shadow:0x444440,detail:0xc7a46c,hair:0x49372f,weapon:'hammer'},
+      olmo:{coat:0x668077,shadow:0x42584f,detail:0xa9d1bb,hair:0xb0a188,weapon:'staff'},
+      dara:{coat:0x527d8a,shadow:0x365463,detail:0xadc7c6,hair:0x362e3d,weapon:'spear'},
+      vega:{coat:0x835462,shadow:0x563945,detail:0xe4a185,hair:0x362d33,weapon:'staff'},
+      lorena:{coat:0x778b97,shadow:0x485b66,detail:0xd3bfa2,hair:0x9d8f74,weapon:'shield'}
+    };
+    const profile=heroId?heroPalette[heroId]:null;
     const court=u.side==='enemy';
     const healer=/marga|olmo|curand|bardo|sacerdot/.test(id+' '+name);
     const knight=/lorena|cavaleir|inquisidor|guarda|lanceir|paladino/.test(id+' '+name);
     const caster=/vega|bruxa|feiticeir|arauto/.test(id+' '+name);
-    const color=court?0x884e61:healer?0x657f6b:caster?0x665a90:knight?0x718790:0x567b75;
-    const shade=court?0x573343:healer?0x394f44:caster?0x423b64:knight?0x415560:0x314b48;
-    const trim=court?0xd4a39d:healer?0xd8c489:caster?0xb8a6de:0xc6b78e;
+    const color=profile?profile.coat:court?0x884e61:healer?0x657f6b:caster?0x665a90:knight?0x718790:0x567b75;
+    const shade=profile?profile.shadow:court?0x573343:healer?0x394f44:caster?0x423b64:knight?0x415560:0x314b48;
+    const trim=profile?profile.detail:court?0xd4a39d:healer?0xd8c489:caster?0xb8a6de:0xc6b78e;
     const sprite=scene.add.graphics();
     // All coordinates lie on a 4px grid to keep the pixel silhouette crisp.
     const p=(px,py,w,h,fill)=>{sprite.fillStyle(fill,1);sprite.fillRect((px-10)*4,(py-27)*4,w*4,h*4);};
@@ -56,28 +69,38 @@ function play(scene,options){
     p(3,19,3,2,0xd4ad8f);p(14,19,3,2,0xd4ad8f);
     p(6,4,8,9,0xe0b796);           // face
     p(5,3,10,4,court?0x45404c:0x503a36);
-    p(6,2,8,2,court?0x626675:0x705046);
+    p(6,2,8,2,profile?profile.hair:court?0x626675:0x705046);
     p(faceRight?12:7,9,2,1,0x242c35); // visible eye
     p(8,12,4,2,shade);             // collar
     if(knight){p(5,3,10,3,0x6e8290);p(4,5,2,7,0x8797a0);p(14,5,2,7,0x8797a0);p(7,15,6,3,0xb2b5b6);}
     if(healer){p(4,4,12,3,0xd1be82);p(8,15,4,1,0xf4df9b);p(9,13,2,5,0xf4df9b);}
     if(caster){p(4,4,12,2,0x7866ab);p(7,1,6,3,0x594b87);p(6,18,8,2,0x9080bc);}
     if(court){p(4,11,12,2,0x9a6b70);p(8,16,4,2,0xb46b6e);}
+    if(heroId==='iria'){p(3,7,3,6,0x343447);p(14,7,3,6,0x343447);}
+    if(heroId==='silas'){p(2,11,4,5,0x8b8b89);p(14,11,4,5,0x8b8b89);}
+    if(heroId==='dara'){p(6,3,8,2,0x84a9b4);p(8,16,4,4,0xb8d9de);}
+    if(heroId==='lorena'){p(3,11,4,8,0xaab6be);p(13,11,4,8,0xaab6be);}
     c.add(sprite);
-    const equipped=healer||caster?0xc9a477:0xe2d6bf;
+    const weaponType=profile?.weapon||(healer||caster?'staff':'sword');
+    const staff=weaponType==='staff';
+    const equipped=staff?0xc9a477:0xe2d6bf;
     // The weapon rotates around the hand, with a distinct hilt/edge silhouette.
     const pivot=faceRight?37:-37;
     const weapon=scene.add.container(pivot,-16);
-    const shaft=scene.add.rectangle(0,-30,healer||caster?9:8,healer||caster?85:89,equipped);
+    const shaft=scene.add.rectangle(0,-30,staff?9:8,staff?85:89,equipped);
     const grip=scene.add.rectangle(0,9,13,17,0x473b3a);
     weapon.add([shaft,grip]);
-    if(!healer&&!caster){
+    if(!staff){
       weapon.add(scene.add.rectangle(0,-3,34,7,0xb3a4a1));
-      weapon.add(scene.add.triangle(0,-79,-5,9,5,9,0,0,0xf7edda));
+      if(weaponType==='hammer')weapon.add(scene.add.rectangle(0,-79,40,22,0x888989));
+      else if(weaponType==='spear')weapon.add(scene.add.triangle(0,-86,-9,16,9,16,0,-8,0xd9ddd6));
+      else if(weaponType==='dagger')weapon.add(scene.add.triangle(0,-72,-5,9,5,9,0,-8,0xc6c8d5));
+      else weapon.add(scene.add.triangle(0,-79,-5,9,5,9,0,0,0xf7edda));
     }else{
       weapon.add(scene.add.circle(0,-74,12,caster?0xb59cdb:0x8bcdaa));
     }
     c.add(weapon);
+    if(weaponType==='shield')c.add(scene.add.polygon(faceRight?-31:31,-8,[-18,-18,18,-18,18,9,0,28,-18,9],0xa1acb4).setStrokeStyle(3,0xdbca9f));
     c.add(scene.add.ellipse(0,25,90,12,0x050c12,.35).setDepth(-1));
     return {c,weapon};
   }
