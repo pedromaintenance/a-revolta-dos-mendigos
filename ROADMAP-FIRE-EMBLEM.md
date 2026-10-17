@@ -423,3 +423,30 @@ O núcleo `tactical-core.js` foi avaliado em JavaScript em cinco verificações:
 5. Verificar o resultado real do CI e abrir um bug específico se houver erro em qualquer navegador.
 
 **Próximo passo recomendado:** executar e tornar obrigatórios testes em navegador, formalizar modelos gráficos por personagem e substituir pixel art procedural por spritesheets autorais.
+
+## Entrega T2.11 — identidade visual individual dos oito heróis (17/10/2026)
+
+**Release:** v17, publicada na branch `main` para testes no GitHub Pages.
+
+### Entrega implementada
+- `battle-popup.js`: adicionados **perfis visuais explícitos** para Coto, Marga, Íria, Silas, Olmo, Dara, Vega e Lorena, substituindo o reconhecimento exclusivamente genérico por classes. Cada perfil possui cores de roupas/sombras/detalhes/cabelo e armamento próprio. Os perfis permanecem pixel-art procedural feita em código (não spritesheets externas).
+- Variações de equipamento: espada, cajado, adaga, martelo, lança e escudo. Silas recebe martelo; Íria, adaga; Dara, lança; Lorena, escudo. Há detalhes de traje específicos para diferentes heróis.
+- `tactical-lab.html`: nova prévia **Vitrine dos oito heróis**, que apresenta oito confrontos demonstrativos em sequência para comparar aparências e armas sem avançar a campanha ou alterar saves; continuam disponíveis PRÓXIMO e PULAR TUDO.
+- `tests/cinematic-contract.test.js`: acrescentadas asserções de presença dos oito perfis, da vitrine e dos tipos de armamento.
+- `index.html` e scripts publicados como `?v=17`; `sw.js` passa a `revolta-cache-v17`.
+
+### QA e limitações
+- Fonte única das regras de combate permanece `app.js`; esta entrega não modifica dano, PV, XP, decisões, missões ou formato de save.
+- Verificação de sintaxe e contratos estáticos deve acompanhar a versão, mas execução visual real no navegador ainda não foi confirmada.
+- As figuras são procedurais, portanto não equivalem a arte final pixel-by-pixel nem às animações específicas com vários quadros.
+- A vitrine usa valores sintéticos de PV intencionalmente e não deve ser confundida com a campanha.
+- GitHub Actions CI disponível em https://github.com/pedromaintenance/a-revolta-dos-mendigos/actions/workflows/combat-tests.yml; conferir estado do job, sem presumir sucesso.
+
+### Roteiro de aceite
+1. Abrir https://pedromaintenance.github.io/a-revolta-dos-mendigos/tactical-lab.html e selecionar **Vitrine dos oito heróis**.
+2. Verificar se armas e roupas mudam ao longo das oito cenas, incluindo martelo de Silas, adaga de Íria, lança de Dara e escudo de Lorena.
+3. Testar PRÓXIMO e PULAR TUDO na sequência.
+4. Voltar à campanha, reproduzir ataque e defesa; conferir PV e save.
+5. Se houver sprites invisíveis/cortes visuais, registrar navegador, aparelho e captura.
+
+**Próximo marco recomendado:** trocar a heurística por metadados visuais canônicos compartilhados com a campanha, desenhar spritesheets de vários quadros e implementar testes end-to-end com navegador.
