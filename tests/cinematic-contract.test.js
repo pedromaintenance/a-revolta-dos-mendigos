@@ -57,3 +57,13 @@ test('tactical core remains deterministic',()=>{
  assert.equal(s.units[1].hp,18);
  assert.equal(s.units[0].hp,26);
 });
+
+test('pixel cut-in uses local palette and distinct equipment',()=>{
+ assert.ok(popup.includes('Local procedural pixel sprites'));
+ assert.ok(popup.includes('const healer='));
+ assert.ok(popup.includes('const knight='));
+ assert.ok(popup.includes('const caster='));
+ assert.ok(popup.includes('scene.add.graphics()'));
+ assert.ok(popup.includes('const weapon=scene.add.container('));
+ assert.ok(popup.includes('targets:attacker.weapon'));
+});
