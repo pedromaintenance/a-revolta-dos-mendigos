@@ -1,0 +1,44 @@
+name: Testes de combate
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app.js'
+      - 'data.js'
+      - 'phaser-battle.js'
+      - 'battle-popup.js'
+      - 'tactical-core.js'
+      - 'tactical-lab.html'
+      - 'index.html'
+      - 'sw.js'
+      - 'tests/**'
+      - '.github/workflows/combat-tests.yml'
+  pull_request:
+    paths:
+      - 'app.js'
+      - 'data.js'
+      - 'phaser-battle.js'
+      - 'battle-popup.js'
+      - 'tactical-core.js'
+      - 'tactical-lab.html'
+      - 'index.html'
+      - 'sw.js'
+      - 'tests/**'
+      - '.github/workflows/combat-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    name: Verificar núcleo e contrato cinematográfico
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Testes do tabuleiro
+        run: node tests/tactics.test.js
+      - name: Contratos cinematográficos e release
+        run: node tests/cinematic-contract.test.js
