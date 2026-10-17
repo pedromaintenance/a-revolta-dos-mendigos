@@ -7,6 +7,7 @@ on:
       - 'data.js'
       - 'phaser-battle.js'
       - 'battle-popup.js'
+      - 'cinematic-pixel-frames.js'
       - 'tactical-core.js'
       - 'tactical-lab.html'
       - 'index.html'
@@ -19,6 +20,7 @@ on:
       - 'data.js'
       - 'phaser-battle.js'
       - 'battle-popup.js'
+      - 'cinematic-pixel-frames.js'
       - 'tactical-core.js'
       - 'tactical-lab.html'
       - 'index.html'
@@ -47,6 +49,8 @@ jobs:
         run: node tests/cinematic-contract.test.js
       - name: Eventos cinematográficos em mock Phaser
         run: node tests/cinematic-runtime.test.js
+      - name: Spritesheets de seis poses
+        run: node tests/pixel-frames.test.cjs
 
   browser:
     name: Chromium — telas e cut-ins
