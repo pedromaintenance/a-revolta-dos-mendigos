@@ -208,3 +208,21 @@ A cena integrada `phaser-battle.js` tem agora **HUD Phaser interativo** de 420×
 4. Se aparecerem apenas os retângulos provisórios, inspecionar erros de rede/CORS do asset Kenney no console.
 
 **Verificações feitas:** análise estática de sintaxe do JavaScript e commits no GitHub. Validação visual e funcional da entrega no Pages permanece pendente.
+
+## Entrega v6 — formações diagonais e HUD legível (16/10/2026)
+
+**Pedido:** seguindo referência visual de batalhas JRPG, reduzir a escala dos sprites Kenney e organizar 1–4 aliados/inimigos em posições alternadas, com mais profundidade, sem nomes e barras encavalados.
+
+**Implementado no `main`:**
+- Arena Phaser agora mede **420×560**, com faixa de ação separada visualmente na base. Aliados aparecem **à direita**, tropas da Corte **à esquerda**, de acordo com a composição da referência.
+- Substituída a distribuição linear por formações diagonais distintas para 1, 2, 3 e 4 unidades: deslocamentos laterais alternados, distâncias verticais calculadas e escala por ocupação (0,90 / 0,78 / 0,68 / 0,60).
+- Sprites 16×16 Kenney reduziram a ampliação base de **4,3× para 3,05×**, antes do ajuste por formação. Profundidade visual dos personagens usa `setDepth(100+y)`.
+- Barras de PV, nomes abreviados e números de Foco foram deslocados para **HUDs de tamanho fixo**, independentes da escala do personagem, com painéis de fundo próprios; os alvos de toque diminuíram para evitar colisões entre unidades.
+- Animação de avanço foi invertida para que aliados ataquem da direita em direção à esquerda; reações de impacto acompanham o lado correto.
+- Ajustada quarta posição para permanecer acima da faixa de comandos. `index.html` usa proporção `420/560` e `?v=6`; cache versionado `revolta-cache-v6`.
+
+**Sem mudanças:** valores de dano, habilidades, cura, campanha, save v1 e interface narrativa. Os sprites gratuitos ainda são externos e o motor Phaser ainda depende de CDN: não declarar offline completo.
+
+**QA pendente:** renderização e toque em Android/desktop, legibilidade em grupos de quatro, animações após turnos e conferência de cache atualizado no GitHub Pages. Código submetido e sintaxe JavaScript verificada, mas não foi realizado teste funcional de navegador nesta entrega.
+
+**Roteiro curto:** abrir a batalha do dia 3, confirmar inimigos à esquerda e aliados à direita; verificar que cada unidade possui nome/HP próprio sem cobrir outros sprites; executar ataque e encerrar rodada; repetir com quatro unidades por facção.
