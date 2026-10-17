@@ -146,3 +146,20 @@ A cena integrada `phaser-battle.js` tem agora **HUD Phaser interativo** de 420×
 **QA executado:** conferência das mudanças no GitHub e validação de sintaxe de `app.js`, `phaser-battle.js` e `sw.js`. **Pendente:** teste real em Chrome Android/desktop, verificação do SW instalado, confirmação de tela Phaser e publicação efetiva no Pages. O relato não deve ser marcado como solucionado definitivamente sem esse retorno.
 
 **Teste solicitado:** abrir a campanha no Pages, entrar numa batalha; verificar o campo gráfico e os botões dentro do canvas; se persistir a versão antiga, recarregar a página conectada à internet e fechar/reabrir o PWA para ativar o cache v2. Se houver falha, observar o aviso textual e confirmar que os botões clássicos permanecem funcionais.
+
+## Hotfix 2 — tela aparece brevemente e desaparece (17/10/2026)
+
+**Evidência:** captura do jogador mostra a batalha do Dia 1 com uma área vazia de aproximadamente 420×650, sem unidades nem controles, e a interface HTML clássica oculta. O gráfico teria surgido por um instante e desaparecido.
+
+**Diagnóstico de engenharia:** além do problema anterior de dimensionamento, a implementação executava `main()` e `Phaser.Game.destroy(true)` a cada seleção, alvo e ação, criando um novo `Phaser.Game` e um novo canvas em todas as atualizações. A marca de pronto ocorria no `Scene.create()`, antes da verificação de um frame efetivamente renderizado. Isso criava uma condição de corrida entre montagem, destruição e ocultação do fallback. Esta é uma hipótese de causa raiz sustentada pelo código, sem acesso ao console do navegador que reproduziu a falha.
+
+**Correção no `main`:**
+- `battleScreen()` detecta se a batalha já tem DOM e **não substitui o `#stage`** em ações subsequentes; atualiza apenas status, botões HTML e registro, salva e solicita `PhaserBattle.refresh()`.
+- `PhaserBattle.refresh()` reinicia somente a **cena** para redesenhar dados atuais, sem destruir o objeto `Phaser.Game` nem o canvas. A instância só é destruída ao trocar de tela ou concluir batalha.
+- `Phaser.CANVAS` força Canvas 2D nesta fatia, evitando problemas dependentes da inicialização WebGL. A lib continua no CDN, com fallback DOM.
+- A classe `phaser-ready`, que oculta os retratos clássicos, só é aplicada após o evento `postrender`, com verificação de que o canvas existe, está conectado ao DOM e tem dimensões válidas.
+- Cache do service worker atualizado para `revolta-cache-v3`, com query `?v=3` nos scripts para reduzir carga de versões antigas.
+
+**Verificações realizadas:** commits confirmados no GitHub e sintaxe JS do bridge Phaser validada. **Não realizado:** teste automatizado de navegador, comprovação do canvas visível no Pages e teste real do service worker no dispositivo. Não marcar como resolvido até retorno do usuário ou prova de QA.
+
+**Teste:** abrir o Pages com rede, atualizar, entrar na batalha Dia 1. O canvas deve permanecer visível após selecionar Coto e depois ao escolher Atacar → Guarda. Conferir turno inimigo, recarregar campanha salva e verificar se o registro e PV persistem. Se o erro continuar, solicitar mensagem específica do console do navegador e inspecionar eventuais erros de renderização e versão da CDN.
