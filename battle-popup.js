@@ -62,6 +62,14 @@ function play(scene,options){
     const color=profile?profile.coat:court?0x884e61:healer?0x657f6b:caster?0x665a90:knight?0x718790:0x567b75;
     const shade=profile?profile.shadow:court?0x573343:healer?0x394f44:caster?0x423b64:knight?0x415560:0x314b48;
     const trim=profile?profile.detail:court?0xd4a39d:healer?0xd8c489:caster?0xb8a6de:0xc6b78e;
+    // Six actual sprite frames are generated as one local Phaser spritesheet.
+    // Retain the original Graphics body if canvas textures are unavailable.
+    const frames=window.RevoltPixelFrames?.createFighter?.(scene,u,faceRight,{
+      coat:color,shadow:shade,detail:trim,hair:profile?profile.hair:court?0x626675:0x705046,
+      heroId,court,knight,healer,caster
+    });
+    if(frames)c.add(frames.sprite);
+    else{
     const sprite=scene.add.graphics();
     // All coordinates lie on a 4px grid to keep the pixel silhouette crisp.
     const p=(px,py,w,h,fill)=>{sprite.fillStyle(fill,1);sprite.fillRect((px-10)*4,(py-27)*4,w*4,h*4);};
@@ -88,6 +96,8 @@ function play(scene,options){
     if(heroId==='dara'){p(6,3,8,2,0x84a9b4);p(8,16,4,4,0xb8d9de);}
     if(heroId==='lorena'){p(3,11,4,8,0xaab6be);p(13,11,4,8,0xaab6be);}
     c.add(sprite);
+    }
+
     const weaponType=profile?.weapon||(healer||caster?'staff':'sword');
     const staff=weaponType==='staff';
     const equipped=staff?0xc9a477:0xe2d6bf;
@@ -109,7 +119,7 @@ function play(scene,options){
     c.add(weapon);
     if(weaponType==='shield')c.add(scene.add.polygon(faceRight?-31:31,-8,[-18,-18,18,-18,18,9,0,28,-18,9],0xa1acb4).setStrokeStyle(3,0xdbca9f));
     c.add(scene.add.ellipse(0,25,90,12,0x050c12,.35).setDepth(-1));
-    return {c,weapon,weaponType};
+    return {c,weapon,weaponType,pose(name){frames?.pose(name);}};
   }
   const attacker=makeFighter(a,xAtt,allyLeft),defender=makeFighter(d,xDef,!allyLeft);
   const aName=text(xAtt,135,a.name,11,'#b9e4c9'),dName=text(xDef,135,d.name,11,'#efb7bc');
@@ -200,6 +210,8 @@ function play(scene,options){
   if(kind==='heal'||kind==='guard'){
     const healed=Math.max(0,dAfter.hp-d.hp);
     delay(200,()=>{
+      attacker.pose('ready');
+      defender.pose(kind==='guard'?'guard':'ready');
       eventTitle.setText(kind==='heal'?a.name+' RESTAURA '+d.name:d.name+' ASSUME DEFESA!');
       scene.tweens.add({targets:defender.c,scale:1.08,duration:240,yoyo:true,ease:'Sine.easeInOut'});
     });
@@ -216,6 +228,7 @@ function play(scene,options){
         eventTitle.setText(d.name+' RECUPERA +'+healed+' PV');
       }else eventTitle.setText(d.name+' ESTÁ PROTEGIDO');
     });
+    delay(1100,()=>{attacker.pose('idle');if(kind==='heal')defender.pose('idle');});
     delay(1550,finish);
     return;
   }
@@ -253,6 +266,7 @@ function play(scene,options){
   const impact=release+(fast?125:heavy?225:spell?195:175);
   const recovery=heavy?440:fast?180:285;
   delay(windup,()=>{
+    attacker.pose('ready');
     eventTitle.setText(spell?a.name+' CONJURA!':heavy?a.name+' ERGUE O MARTELO':pierce?a.name+' ARMA A LANÇA':fast?a.name+' AVANÇA NAS SOMBRAS':shieldBash?a.name+' INVESTE!':a.name+' PREPARA O GOLPE');
     scene.tweens.add({targets:attacker.weapon,angle:spell?0:heavy?(allyLeft?-110:110):pierce?(allyLeft?-22:22):(allyLeft?-62:62),duration:heavy?230:130,ease:'Sine.easeOut'});
     scene.tweens.add({targets:attacker.c,y:yChar-(heavy?15:7),duration:140,yoyo:true});
@@ -264,6 +278,7 @@ function play(scene,options){
     }
   });
   delay(release,()=>{
+    attacker.pose('strike');
     eventTitle.setText(spell?'MAGIA DESENCADEADA!':heavy?'IMPACTO ESMAGADOR!':pierce?'ESTOCADA!':fast?'GOLPE RÁPIDO!':shieldBash?'GOLPE DE ESCUDO!':a.name+' ATACA!');
     scene.tweens.add({targets:attacker.c,x:xAtt+(allyLeft?(pierce?82:fast?88:65):-(pierce?82:fast?88:65)),duration:fast?95:heavy?235:175,yoyo:true,hold:heavy?145:70,ease:heavy?'Quad.easeIn':'Quad.easeOut'});
     scene.tweens.add({targets:attacker.weapon,angle:spell?0:heavy?(allyLeft?115:-115):pierce?(allyLeft?28:-28):(allyLeft?78:-78),duration:heavy?235:fast?90:150,ease:'Cubic.easeIn',onComplete:()=>{
@@ -273,6 +288,7 @@ function play(scene,options){
     if(fast)scene.tweens.add({targets:attacker.c,alpha:.42,duration:70,yoyo:true,repeat:1});
   });
   delay(impact,()=>{
+    attacker.pose('idle');defender.pose('hurt');
     if(ability)abilityFx(xDef,241,'hit');
     if(spell&&!ability)magicMotif(xDef,241,'hit');
     slash(xDef,241,spell?0xc4a5ff:heavy?0xffa577:pierce?0xb4d6db:fast?0xf6d9e7:0xffd598);
@@ -283,6 +299,7 @@ function play(scene,options){
     eventTitle.setText('−'+lost+' PV · '+d.name);
     if(fatal){
       delay(190,()=>{
+        defender.pose('down');
         eventTitle.setText(d.name+' FOI DERROTADO');
         const burst=add(scene.add.star(xDef,239,8,24,78,0xc95c62,.42));
         const crest=text(xDef,214,'✕',47,'#ffd6bf');
@@ -295,11 +312,13 @@ function play(scene,options){
   let endTime=1150;
   if(counter>0&&dAfter.hp>0){
     delay(impact+645,()=>{
+      defender.pose('ready');
       eventTitle.setText('CONTRA-ATAQUE!');
       scene.tweens.add({targets:defender.weapon,angle:allyLeft?62:-62,duration:120,yoyo:true});
       scene.tweens.add({targets:defender.c,x:xDef+(allyLeft?-60:60),duration:175,yoyo:true,hold:75});
     });
     delay(impact+865,()=>{
+      defender.pose('strike');attacker.pose('hurt');
       slash(xAtt,241,0xd9a7f7);
       scene.cameras.main.shake(100,.003);
       updateBar(aFill,aVal,xAtt,aAfter.hp,a.maxhp,counter);
@@ -308,6 +327,8 @@ function play(scene,options){
     });
     endTime=impact+1735;
   }else endTime=impact+(fatal?1395:1035);
+  delay(Math.min(endTime-250,impact+540),()=>{if(!fatal)defender.pose('idle');});
+  delay(endTime-200,()=>{if(aAfter.hp>0)attacker.pose('idle');});
   delay(endTime,finish);
 }
 root.RevoltBattlePopup={play};
