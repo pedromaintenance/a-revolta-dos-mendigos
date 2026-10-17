@@ -450,3 +450,34 @@ O núcleo `tactical-core.js` foi avaliado em JavaScript em cinco verificações:
 5. Se houver sprites invisíveis/cortes visuais, registrar navegador, aparelho e captura.
 
 **Próximo marco recomendado:** trocar a heurística por metadados visuais canônicos compartilhados com a campanha, desenhar spritesheets de vários quadros e implementar testes end-to-end com navegador.
+
+## Entrega T2.12 — ataques por tipo de armamento (17/10/2026)
+
+**Publicação:** v18 em `main`; prévia no laboratório: https://pedromaintenance.github.io/a-revolta-dos-mendigos/tactical-lab.html.
+
+### Mudanças realizadas
+- O popup cinematográfico reconhece `weaponType` de cada combatente procedural e altera a coreografia por classe de arma:
+  - **Adaga (Íria):** preparação curta, investida rápida e dupla oscilação de transparência para sugerir golpe furtivo.
+  - **Martelo (Silas):** preparação mais longa, elevação maior e golpe pesado com impacto e tremor de câmera mais intensos.
+  - **Lança (Dara):** antecipação curta e avanço mais longo, visualizando uma estocada.
+  - **Cajado (Marga, Olmo, Vega):** concentração com brilho arcano antes da liberação; o movimento representa efeito mágico, sem modificar alcance ou regras de combate.
+  - **Escudo (Lorena):** investida específica, mantendo o escudo no modelo visual.
+  - **Espada (Coto e inimigos comuns):** conserva uma cadência equilibrada.
+- Os tempos de animação e contra-ataque agora são relativos ao impacto da arma: `windup`, `release`, `impact` e `recovery`. Isso evita que o dano apareça antes do fim da preparação de um martelo, por exemplo.
+- A opção do laboratório foi renomeada para **Vitrine de ataques: oito heróis**, para destacar que ela permite comparar os estilos em sequência.
+- `tests/cinematic-contract.test.js` verifica a existência dos arquétipos e dos gatilhos de tempo relativos ao impacto.
+- `index.html` usa scripts `?v=18`; `sw.js` usa `revolta-cache-v18`; laboratório aponta para `battle-popup.js?v=18`.
+
+### Garantias e limites
+- Dano, PV, XP, save e turnos **não foram alterados**. A implementação modifica apenas a apresentação dos eventos já resolvidos pelo `app.js` ou pelo núcleo tático do laboratório.
+- A animação é procedural; **ainda não usa spritesheets autorais quadro a quadro**.
+- Estilos de cajado representam visualmente magia mesmo em um evento de ataque, mas não criam novas habilidades.
+- Testes estáticos e commits não substituem QA visual. GitHub Actions precisa ser consultado para confirmar execução bem-sucedida.
+
+### Aceite no Pages
+1. Abrir laboratório, escolher **Vitrine de ataques: oito heróis**, reproduzir e comparar especialmente Íria, Silas, Dara e Vega.
+2. Conferir que a vida diminui **no impacto**, não na preparação; Silas deve parecer mais lento e pesado que Íria.
+3. Testar golpe final, contra-ataque e **PULAR TUDO** após uma sequência para verificar limpeza de timers e controles.
+4. Testar um combate da campanha sem alterações no progresso salvo.
+
+**Próximo marco:** spritesheets autorais e testes de renderização automatizados; posteriormente, migração gradual das batalhas da campanha para movimentação em grade.
