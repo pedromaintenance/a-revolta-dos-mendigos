@@ -1,6 +1,6 @@
-/* Revolta dos Mendigos — service worker v17. Phaser usa CDN; campanha clássica permanece offline. */
+/* Revolta dos Mendigos — service worker v18. Phaser usa CDN; campanha clássica permanece offline. */
 'use strict';
-const CACHE='revolta-cache-v17';
+const CACHE='revolta-cache-v18';
 const CORE=['./','./index.html','./style.css','./data.js','./app.js','./phaser-battle.js','./battle-popup.js','./manifest.webmanifest','./icons/icon-192.png'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));
