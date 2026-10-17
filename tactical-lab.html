@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#111b25"><title>A Primeira Espada — Campo Tático Experimental</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111820;color:#ead9bc;font-family:Georgia,serif}main{max-width:540px;margin:auto;padding:14px}
+h1{font-size:25px;margin:12px 0 5px;color:#edc68a}.sub{color:#b6b9bd;font-size:14px;line-height:1.45}
+nav{display:flex;gap:10px;align-items:center}a{color:#e4b877}#game{border:2px solid #947153;background:#1a2a32;aspect-ratio:420/460;width:100%;max-width:500px;margin:14px auto}#game canvas{display:block;max-width:100%;height:auto!important;margin:auto}
+.controls{display:flex;gap:8px;margin-bottom:10px}button{flex:1;min-height:46px;background:#354f55;border:1px solid #d4a96e;color:#f8e9cf;font:700 13px system-ui;cursor:pointer}button:disabled{opacity:.38;cursor:not-allowed}#info{min-height:58px;background:#22303a;border-left:3px solid #d7a76e;padding:9px 12px;font:13px/1.6 system-ui}#history{color:#ccc1ad;font:12px/1.6 system-ui;min-height:80px;padding:5px 9px}small{color:#9bb8b4}.tag{font:700 11px system-ui;letter-spacing:1px;color:#c9959a}
+</style></head>
+<body><main>
+<nav><a href="./index.html">← Campanha principal</a><span class="tag">EXPERIMENTO TÁTICO · T1</span></nav>
+<h1>A Primeira Espada</h1>
+<p class="sub">Experimento independente: selecione Coto, toque numa casa azul para mover e ataque o guarda quando estiver adjacente. Use <b>Encerrar turno</b> para permitir a resposta inimiga. Este protótipo não lê nem modifica seu salvamento.</p>
+<div id="game" aria-label="Campo tático com dez colunas e nove linhas"></div>
+<div class="controls"><button id="attack" disabled>⚔ Atacar</button><button id="end">Encerrar turno</button><button id="restart">Reiniciar</button></div>
+<div id="info" role="status">Iniciando mapa tático…</div><div id="history"></div>
+<p><small>Protótipo de movimento ortogonal, obstáculos, ocupação, previsão e contra-ataque. Ainda não substitui o combate dos 42 dias.</small></p>
+</main>
+<script src="./tactical-core.js?v=1"></script>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+<script>
+(function(){
+'use strict';
+const T=window.RevoltTactics,W=420,H=460;
+let state=T.initial(),scene=null;
+const info=document.getElementById('info'),history=document.getElementById('history'),attackButton=document.getElementById('attack');
+const alive=(id)=>state.units.find(u=>u.id===id);
+function paint(){
+ if(!scene)return;
+ scene.children.removeAll(true);
+ const g=scene.add.graphics().setDepth(0);
+ g.fillStyle(0x142530).fillRect(0,0,W,H);
+ scene.add.text(210,15,'PONTE DOS TRIBUTOS · DIA 1',{fontFamily:'monospace',fontSize:'15px',color:'#eed7a4'}).setOrigin(.5);
+ const ox=20,oy=60,tile=38;
+ const moves=state.selected==='coto'&&!state.moved&&!state.over?new Set(T.reachable(state,'coto').map(v=>T.key(v.x,v.y))):new Set();
+ for(let y=0;y<T.H;y++)for(let x=0;x<T.W;x++){
+  const k=T.key(x,y),wall=T.walls.has(k),water=T.water.has(k)&&!T.bridges.has(k);
+  let color=water?0x24566d:T.bridges.has(k)?0x927455:wall?0x45535a:0x4e614c;
+  const xx=ox+x*tile,yy=oy+y*tile;
+  g.fillStyle(color).fillRect(xx,yy,tile-1,tile-1);
+  if(wall){g.fillStyle(0x32353a).fillRect(xx+7,yy+7,24,24);}
+  if(T.bridges.has(k)){g.lineStyle(2,0x6d4b37).lineBetween(xx+2,yy+19,xx+36,yy+19);}
+  if(moves.has(k)){g.fillStyle(0x77bcdc,.42).fillRect(xx+2,yy+2,tile-5,tile-5);g.lineStyle(1,0x9bdaec).strokeRect(xx+1,yy+1,tile-3,tile-3);}
+  const hit=scene.add.zone(xx+19,yy+19,tile,tile).setDepth(3).setInteractive({useHandCursor:true});
+  hit.on('pointerdown',()=>{if(state.over)return;const unit=state.units.find(u=>u.x===x&&u.y===y&&u.hp>0);if(unit){if(unit.side==='ally')update(T.dispatch(state,{type:'select',id:unit.id}));else if(state.selected==='coto'&&T.distance(alive('coto'),unit)===1)update(T.dispatch(state,{type:'attack'}));return;}if(moves.has(k))update(T.dispatch(state,{type:'move',x,y}));});
+ }
+ for(const u of state.units){
+  const cx=ox+u.x*tile+19,cy=oy+u.y*tile+19;
+  const col=u.side==='ally'?0x82cba5:0xd38186;
+  scene.add.ellipse(cx,cy+12,29,8,0x10151b,.55).setDepth(4);
+  scene.add.rectangle(cx,cy-1,22,25,u.hp>0?col:0x4b4c50).setStrokeStyle(2,0x192b32).setDepth(5);
+  scene.add.circle(cx,cy-19,9,0xd9b39b).setDepth(6);
+  scene.add.text(cx,cy+15,u.side==='ally'?'COTO':'GUARDA',{fontFamily:'monospace',fontSize:'8px',color:'#fff3d9',backgroundColor:'#14212c'}).setOrigin(.5).setDepth(7);
+  scene.add.rectangle(cx,cy-34,34,5,0x40282c).setDepth(6);
+  scene.add.rectangle(cx-16,cy-34,32*Math.max(0,u.hp/u.maxhp),4,col).setOrigin(0,.5).setDepth(7);
+  if(state.selected===u.id&&u.hp>0)scene.add.rectangle(cx,cy-3,34,38).setStrokeStyle(2,0xffd182).setDepth(8);
+ }
+ scene.add.text(210,439,'AZUL: MOVIMENTO · ÁGUA: BLOQUEIO',{fontFamily:'monospace',fontSize:'11px',color:'#d7c4a4'}).setOrigin(.5);
+ const c=alive('coto'),e=alive('guarda'),adj=T.distance(c,e)===1;
+ const fc=T.forecast(c,e);
+ attackButton.disabled=state.over||state.selected!=='coto'||state.attacked||!adj;
+ document.getElementById('end').disabled=state.over;
+ info.textContent=state.over?(state.win?'VITÓRIA: Coto conserva a primeira espada.':'DERROTA: o guarda venceu.'):'Turno '+state.turn+' · Coto '+c.hp+'/'+c.maxhp+' PV · Guarda '+e.hp+'/'+e.maxhp+' PV'+(adj?' · Previsão: '+fc.damage+' de dano; contra-ataque '+fc.counter:' · Distância '+T.distance(c,e)+' casas')+(state.moved?' · Movimento usado':'');
+ history.textContent=state.log.slice(0,4).join('  •  ');
+}
+function update(next){state=next;paint();}
+document.getElementById('attack').onclick=()=>update(T.dispatch(state,{type:'attack'}));
+document.getElementById('end').onclick=()=>update(T.dispatch(state,{type:'end'}));
+document.getElementById('restart').onclick=()=>update(T.initial());
+if(!window.Phaser){info.textContent='Phaser não carregou. Reabra com acesso à internet.';return;}
+class Scene extends Phaser.Scene{constructor(){super({key:'tactics'});}create(){scene=this;paint();}}
+new Phaser.Game({type:Phaser.CANVAS,parent:'game',width:W,height:H,backgroundColor:'#17232f',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_HORIZONTALLY},render:{pixelArt:true,antialias:false},scene:[Scene]});
+})();
+</script></body></html>
