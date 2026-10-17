@@ -275,3 +275,24 @@ Criar `BattleEventQueue` com eventos tipados `attack / damage / heal / guard / e
 **Verificação feita:** commits no GitHub e validação estática de sintaxe. **Pendente:** QA visual e funcional completo no Pages.
 
 **Próximo marco:** mover eventos para uma API formal `BattleEventQueue`, incluir animações de cura/guarda/magia, mostrar ao vivo o estado anterior durante cada cut-in e substituir sprites geométricos por spritesheets locais.
+
+## Entrega T2.5 — controles de fila cinematográfica v11 (17/10/2026)
+
+**Objetivo:** corrigir perda de eventos quando o Phaser não está pronto ou ainda reproduz um confronto, e tornar as sequências de golpes mais claras e controláveis.
+
+**Publicação em main:**
+- Em `app.js`, `playPendingBattleFX()` só consome eventos depois de `playEvents()` confirmar o início. Se o Phaser estiver indisponível, limpa os eventos pendentes e deixa a campanha seguir normalmente. Se uma cinematográfica ainda estiver ocupada, não consome antecipadamente a fila.
+- Em `phaser-battle.js`, `playEvents()` contabiliza a posição de cada evento e a quantidade total, expondo ao popup `sequencePosition`/`sequenceTotal` e `onSkipAll`.
+- Em `battle-popup.js`, sequências de vários eventos mostram marcador "GOLPE X / Y", o botão **PRÓXIMO** para adiantar somente o confronto atual e **PULAR TUDO** para terminar a fila restante sem recalcular nem aplicar dano duas vezes.
+- Assets/scripts com query `?v=11` e PWA `revolta-cache-v11`; laboratório tático referencia a versão nova do popup.
+
+**Limitações:** fila transitória em memória, popup ainda desenhado com personagens geométricos; não foram implementadas animações de cura/magia nesta entrega. Também não foi executado teste visual de navegador real. Confirmação de sintaxe de JS e disponibilidade dos commits não garante funcionamento integral no Pages.
+
+**Testes de aceite:** 
+1. Dia 2/3, aguardar múltiplos ataques inimigos: ver progressão "GOLPE 1 / N", botão PRÓXIMO e PULAR TUDO.
+2. Verificar que PV não são reduzidos novamente ao pular.
+3. Encerrar uma luta com golpe letal, observando a passagem à tela narrativa após o último evento.
+4. Testar controle após o popup e após recarregar a PWA.
+5. Sem Phaser, confirmar que a campanha prossegue sem travar.
+
+**Próximo passo:** eventos estruturados de cura e defesa; spritesheets animados locais; QA automatizado de turnos, conclusão de batalha e transição do modal.
