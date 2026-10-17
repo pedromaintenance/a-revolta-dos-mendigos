@@ -242,3 +242,36 @@ Começar com estados pequenos: patrulhar, defender posição, priorizar civil/al
 
 ### Próximo marco
 Criar `BattleEventQueue` com eventos tipados `attack / damage / heal / guard / enemy-turn / defeat`, processar transições letais antes da tela de vitória e renderizar sequências de múltiplos inimigos sem inferir autoria a partir de diferença entre snapshots.
+
+## Entrega T2.4 — fila cinematográfica de eventos reais (16/10/2026)
+
+**Problema da v9:** ataques letais encerravam a cena antes do cut-in; o turno inimigo podia aplicar vários danos num único ciclo de `enemyTurn()`, sem possibilidade de reproduzir cada golpe separadamente. A detecção anterior inferia ações por diferenças entre snapshots de PV e só identificava facilmente golpes do jogador.
+
+### Publicado em `main` (v10)
+- `app.js` passa a manter uma **fila transitória `battleVisualEvents`**, fora do save da campanha. `fightDamage()` registra eventos com PV anteriores e posteriores do inimigo e identificação da origem; `enemyTurn()` registra cada golpe recebido por um herói.
+- O motor continua sendo a fonte única de cálculo de dano. Os eventos carregam dados já resolvidos, sem lançar dados, alterar PV ou ativar regras na apresentação.
+- `phaser-battle.js` expõe `playEvents(events,onDone)` e `canPresent()` para reproduzir os confrontos **sequencialmente**, com um único estado de interface bloqueada `visualBusy`, até o último efeito ou a opção **PULAR**.
+- `winBattle()` e `loseGame()` chamam `playPendingBattleFX()` antes de mudar de fase, de forma que ataques letais aguardem a conclusão da apresentação quando o Phaser está pronto. Se a cena/engine não estiverem disponíveis, a campanha prossegue normalmente sem efeitos.
+- `battleScreen()` também consome a fila e só reinicia a cena Phaser após o último efeito. Abandonada a detecção principal por snapshots anteriores na camada de apresentação, embora a animação residual de alteração de PV ainda exista no renderer para cenários sem cut-in.
+- Versionados `app.js?v=10`, `phaser-battle.js?v=10` e cache PWA `revolta-cache-v10`.
+
+### Limites e cuidado com regressões
+- Eventos de **cura, defesa, bloqueio pelo selo feérico, suporte e fadiga** ainda não possuem animação específica.
+- Habilidades de dano em área podem gerar vários cut-ins em sequência, um por inimigo afetado; isso é intencional para testar a fila, mas requer animação coletiva na versão de arte final.
+- Contra-ataque não é inventado nas batalhas canônicas. O protótipo tático ainda possui contra-ataque porque essa é a regra daquele núcleo.
+- A fila é somente em memória: se houver recarregamento de página durante o cut-in, os PV já calculados permanecem no save, mas a animação em andamento não reaparece.
+- O Phaser ainda é carregado da CDN; o combate clássico deve continuar acessível quando a engine não carrega.
+- Teste de interface em navegador real **não executado** neste marco. Validação com o jogador é obrigatória antes de considerar esse fluxo estável.
+
+### Roteiro de aceitação
+1. Dia 1: Coto ataca Guarda e causa dano, cut-in mostra PV uma vez; PULAR retorna ao combate.
+2. Dia 1: atacar Guarda no golpe final — o popup deve aparecer **antes** da vitória narrativa.
+3. Dia 2/3: encerrar a rodada com dois inimigos e observar **um cut-in por golpe recebido**.
+4. Deixar todos os defensores morrerem numa batalha de teste: cut-ins inimigos antes de `gameover`.
+5. Ativar habilidade de área (Vega) com vários inimigos: cut-ins sequenciais, sem dano duplicado.
+6. Recarregar página após um turno e confirmar que saves v1 permanecem legíveis.
+7. Testar PWA Android, ausência de asset remoto e fallbacks.
+
+**Verificação feita:** commits no GitHub e validação estática de sintaxe. **Pendente:** QA visual e funcional completo no Pages.
+
+**Próximo marco:** mover eventos para uma API formal `BattleEventQueue`, incluir animações de cura/guarda/magia, mostrar ao vivo o estado anterior durante cada cut-in e substituir sprites geométricos por spritesheets locais.
