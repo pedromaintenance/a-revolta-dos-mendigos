@@ -8,7 +8,7 @@ function engine(){if(window.Phaser)return Promise.resolve(true);if(loading)retur
 function destroy(){token++;lastSnapshot=null;if(game){try{game.destroy(true)}catch(e){console.warn(e)}game=null}}
 function refresh(){
  if(!game||!game.scene)return;
- try{const scene=game.scene.getScene('battle');if(scene&&scene.sys.isActive())scene.scene.restart();}catch(e){console.error('Falha ao atualizar cena Phaser:',e)}
+ try{const scene=game.scene.getScene('battle');if(scene&&scene.sys.isActive()&&!scene._duelBusy)scene.scene.restart();}catch(e){console.error('Falha ao atualizar cena Phaser:',e)}
 }
 function mount(){
  const host=document.getElementById('phaser-battle');if(!host||!window.RevoltBattleBridge)return;
@@ -152,8 +152,37 @@ function mount(){
     };
     topRoster(state.enemies,true);topRoster(state.heroes,false);
     draw(state.heroes,false);draw(state.enemies,true);
+    // Main campaign: show a cinematic cut-in for a resolved player attack.
+    // We use HP already resolved by app.js, never invent a counterattack.
+    const attackedEnemy=previous&&previous.day===state.day
+      ?state.enemies.find(u=>{const old=previous.enemies.find(p=>p.id===u.id);return old&&u.hp<old.hp;})
+      :null;
+    const sourceId=previous?.targeting;
+    const sourceBefore=previous?.heroes.find(u=>u.id===sourceId);
+    const defenderBefore=attackedEnemy&&previous.enemies.find(u=>u.id===attackedEnemy.id);
+    const hadAttackIntent=previous&&['ataque','skillEnemy'].includes(previous.targetMode);
+    const cinematic=hadAttackIntent&&sourceBefore&&defenderBefore&&window.RevoltBattlePopup&&attackedEnemy;
+    if(cinematic){
+      const dataBefore={units:[
+        {id:sourceBefore.id,side:'ally',name:sourceBefore.name,hp:sourceBefore.hp,maxhp:sourceBefore.maxhp},
+        {id:'enemy'+defenderBefore.id,side:'enemy',name:defenderBefore.name,hp:defenderBefore.hp,maxhp:defenderBefore.maxhp}
+      ]};
+      const dataAfter={units:[
+        {...dataBefore.units[0]},
+        {...dataBefore.units[1],hp:attackedEnemy.hp}
+      ]};
+      this._duelBusy=true;
+      this.time.delayedCall(50,()=>{
+        if(!this.sys.isActive())return;
+        try{
+          window.RevoltBattlePopup.play(this,{before:dataBefore,after:dataAfter,
+            attackerId:sourceBefore.id,defenderId:'enemy'+defenderBefore.id,
+            onDone:()=>{this._duelBusy=false;}});
+        }catch(error){this._duelBusy=false;console.error('Cut-in da campanha:',error);}
+      });
+    }
     // Transitions are derived from canonical HP changes, never from guessed damage.
-    if(previous){
+    if(previous&&!cinematic){
       // A newly acted hero visibly surges toward the opposing line.
       const prevActed=new Set(previous.acted||[]);
       for(const id of state.acted||[]){
@@ -219,5 +248,6 @@ function mount(){
   try{game=new Phaser.Game({type:Phaser.CANVAS,parent:root,width:W,height:H,transparent:false,backgroundColor:'#16202e',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_HORIZONTALLY},render:{pixelArt:true,antialias:false},scene:[Battle]});}catch(e){root.classList.remove('phaser-ready','phaser-loading');root.textContent='Erro no Phaser; controles clássicos disponíveis.';game=null;console.error('Phaser combat fallback:',e)}
  });
 }
-window.PhaserBattle={mount,destroy,refresh};
+function isBusy(){try{return !!(game&&game.scene&&game.scene.getScene('battle')?._duelBusy)}catch(e){return false}}
+window.PhaserBattle={mount,destroy,refresh,isBusy};
 })();
