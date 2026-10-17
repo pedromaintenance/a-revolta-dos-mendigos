@@ -507,3 +507,41 @@ O núcleo `tactical-core.js` foi avaliado em JavaScript em cinco verificações:
 4. Conferir ataques comuns, golpe final e cura, além de combates canônicos no Pages.
 
 **Próximo marco:** testes visuais automatizados em navegador e spritesheets autorais; introduzir metadados de animação por habilidade, em vez de depender apenas do ID do personagem.
+
+## Entrega T2.14 — habilidades canônicas e testes reais em Chromium (17/10/2026)
+
+**Release:** v20, publicada na branch `main`.  
+**Campanha:** https://pedromaintenance.github.io/a-revolta-dos-mendigos/  
+**Laboratório:** https://pedromaintenance.github.io/a-revolta-dos-mendigos/tactical-lab.html
+
+### 1. Identificação da habilidade no evento (não apenas na aparência)
+- `app.js`: `fightDamage()` recebe agora metadados opcionais `ability` e `sourceId`, registrados nos eventos de dano; `queueBattleSupport()` também recebe a habilidade de cura/defesa. Isso **não altera o cálculo de dano, PV, turnos ou save**.
+- Os ataques especiais passam os IDs canônicos **`levante`, `sombra`, `martelo`, `rede`, `brasa`**. Ações curativas e defensivas carregam **`partilha`, `canto`, `baluarte`, `defender` e `ervas`**. Apoios sobrenaturais recebem **`graca`** ou **`pacto`**.
+- `phaser-battle.js` encaminha `ability:event.ability||null` aos cut-ins, preservando os valores de PV anteriores/posteriores calculados pelo motor da campanha.
+- `battle-popup.js`: a apresentação utiliza efeitos condicionados à habilidade, além do estilo de arma: grades entrelaçadas para **Rede**, espectros para **Sombra**, fissuras para **Martelo**, estandartes para **Levante**, brasas para **Brasa**, notas musicais para **Canto**, proteção geométrica para **Baluarte**, cintilações para **Partilha**, **Graça** e **Pacto**. Não há novas regras mecânicas escondidas nesses efeitos.
+- `tactical-lab.html`: nova demonstração **Habilidades: oito heróis**, com oito eventos sintéticos em sequência, incluindo cura e guarda; utiliza os mesmos metadados de habilidade da campanha, sem modificar o salvamento.
+
+### 2. Testes executáveis e captura de evidências
+- Adicionado `tests/cinematic-runtime.test.js`: executa o popup num **Phaser simulado**, com 12 casos (Brasa, Rede, Sombra, Martelo, Levante, Partilha, Canto, Baluarte, Graça, Pacto, Defender, Ervas), mais regressão de **PULAR TUDO**. Comprova conclusão única do callback e ausência de exceções no fluxo simulado.
+- Adicionado `tests/browser-smoke.cjs`: abre o jogo servido localmente em **Chromium real via Playwright**, verifica canvas carregado, reproduz ataque, cura, defesa, golpe final, ataque da Corte e vitrine de habilidades, confere o bloqueio/desbloqueio dos controles, valida que o canvas muda durante o efeito e captura seis screenshots PNG. Também testa a entrada da campanha e a ausência de erros JavaScript não tratados.
+- `.github/workflows/combat-tests.yml` agora possui dois jobs: **núcleo/contratos/mock** e **Chromium + screenshots**. Inclui `concurrency` para cancelar execuções antigas da mesma branch e publica as capturas como artefato `cinematic-browser-screenshots`.
+- `tests/cinematic-contract.test.js` recebeu verificações do transporte de `ability`, opções do laboratório e presença dos scripts de teste.
+- Versionamento `app.js?v=20`, `phaser-battle.js?v=20`, `battle-popup.js?v=20`, laboratório popup v20, cache PWA `revolta-cache-v20`.
+
+### 3. Evidência verificada no GitHub Actions
+- [Execução de CI #39038732022](https://github.com/pedromaintenance/a-revolta-dos-mendigos/actions/runs/39038732022): **concluída com sucesso**. Ambos os jobs passaram, inclusive as 12 habilidades do mock, o teste de PULAR TUDO e os smoke tests reais em Chromium. Artefato `cinematic-browser-screenshots` disponível nessa execução.
+- [Publicação do Pages #39038731958](https://github.com/pedromaintenance/a-revolta-dos-mendigos/actions/runs/39038731958): **concluída com sucesso** para o commit de release `b628610b`.
+- Houve execuções intermediárias falhas ou canceladas enquanto arquivos e números de versão eram enviados separadamente; essas execuções não devem ser apresentadas como aceitação do release final. O teste passou quando scripts e cache ficaram sincronizados.
+- A CI testa o conteúdo do repositório **servido localmente no runner**, não a propagação de cache dos aparelhos nem a URL pública do Pages; confirmar em Chrome/Android continua recomendado.
+- Execuções disparadas por commits posteriores podem estar pendentes enquanto este registro é escrito; conferir a versão mais recente no [workflow de testes](https://github.com/pedromaintenance/a-revolta-dos-mendigos/actions/workflows/combat-tests.yml).
+
+### Aceitação pelo jogador
+1. No laboratório, escolher **Habilidades: oito heróis**. Comparar Rede, Sombra, Martelo, Brasa, Levante, cura de Marga/Olmo e Baluarte. A sequência possui oito eventos.
+2. Usar **PRÓXIMO** e **PULAR TUDO**, conferir retorno do mapa e continuidade dos controles.
+3. Na campanha, usar uma habilidade especial e confirmar que o cut-in identifica o efeito corretamente sem duplicar dano. Testar também um golpe letal.
+4. Reabrir a PWA instalada para verificar o cache v20 e continuar o save existente.
+5. Consultar screenshots e status no Actions; registrar qualquer diferença visual entre desktop e celular.
+
+**Limitações restantes:** figuras pixeladas ainda são procedurais, não spritesheets finais; os smoke tests comprovam presença e transição do canvas, mas **não fazem comparação pixel a pixel** com uma arte de referência. Phaser ainda vem de CDN. A movimentação tática em grade ainda está isolada no laboratório, não integrada às 42 batalhas canônicas.
+
+**Próximo marco recomendado:** estabelecer referências visuais de sprites/efeitos e regressão por screenshots, converter figuras procedurais em spritesheets locais por personagem e planejar a integração do tabuleiro ao combate da campanha sem destruir saves antigos.
