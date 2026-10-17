@@ -47,7 +47,10 @@ const sprite1=frames.createFighter(scene,coto,true,profile);
 assert.ok(sprite1);
 for(const pose of poses.slice(1))sprite1.pose(pose);
 assert.deepEqual(Array.from(actors[0].changes),[1,2,3,4,5]);
-assert.ok(canvases[0].calls.length>200,'all six local poses must contain pixel shapes');
+for(let frame=0;frame<6;frame++){
+ const pixels=canvases[0].calls.filter(call=>call.x>=frame*80&&call.x<(frame+1)*80);
+ assert.ok(pixels.length>=14,'pose '+poses[frame]+' should have visible pixel shapes');
+}
 assert.equal(textures.size,1);
 // Cache must reuse the texture but create a new render sprite.
 const sprite2=frames.createFighter(scene,coto,true,profile);
