@@ -42,3 +42,34 @@ jobs:
         run: node tests/tactics.test.js
       - name: Contratos cinematográficos e release
         run: node tests/cinematic-contract.test.js
+      - name: Eventos cinematográficos em mock Phaser
+        run: node tests/cinematic-runtime.test.js
+
+  browser:
+    name: Chromium — telas e cut-ins
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar Playwright e navegador
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Servir o jogo localmente
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/revolta-http.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4173/index.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/revolta-http.log
+          exit 1
+      - name: Testar cut-ins no Chromium
+        run: node tests/browser-smoke.cjs
+      - name: Guardar capturas de QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinematic-browser-screenshots
+          path: artifacts/browser/
+          if-no-files-found: ignore
