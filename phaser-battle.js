@@ -56,7 +56,7 @@ function mount(){
     const acted=state.acted||[];
     function figure(scene,u,enemy,x,y,selected,scale=1){
       const c=scene.add.container(x,y);c.setDepth(100+y);c.setScale(scale);
-      const shadow=scene.add.ellipse(0,6,65,12,0x02080e,.57);
+      const shadow=scene.add.ellipse(0,8,47,9,0x02080e,.47);
       c.add(shadow);
       let actor;
       if(spriteReady){
@@ -78,23 +78,23 @@ function mount(){
         const frame='kenney-'+col+'-'+actualRow;
         if(valid){
           if(!scene.textures.get('kenney').has(frame))scene.textures.get('kenney').add(frame,0,col*17,actualRow*17,16,16);
-          actor=scene.add.image(0,-44,'kenney',frame).setScale(3.05).setOrigin(.5,.8);
+          actor=scene.add.image(0,-8,'kenney',frame).setScale(2.44).setOrigin(.5,1);
           if(enemy)actor.setFlipX(true);
           c.add(actor);
         }
       }
       if(!actor){
         // Never allow an invisible unit: draw a readable local silhouette.
-        actor=scene.add.container(0,-42);
-        const coat=scene.add.rectangle(0,1,37,41,enemy?0x835460:0x568579).setStrokeStyle(2,0x20252c);
-        const face=scene.add.rectangle(0,-29,26,21,0xdab598);
-        const hair=scene.add.rectangle(0,-41,30,8,enemy?0x6a6e78:0x513d34);
-        const legs=[scene.add.rectangle(-10,29,12,17,0x333a40),scene.add.rectangle(10,29,12,17,0x333a40)];
+        actor=scene.add.container(0,-6);
+        const coat=scene.add.rectangle(0,-17,28,28,enemy?0x835460:0x568579).setStrokeStyle(2,0x20252c);
+        const face=scene.add.rectangle(0,-37,20,16,0xdab598);
+        const hair=scene.add.rectangle(0,-47,24,6,enemy?0x6a6e78:0x513d34);
+        const legs=[scene.add.rectangle(-7,5,8,12,0x333a40),scene.add.rectangle(7,5,8,12,0x333a40)];
         actor.add([coat,face,hair,...legs]);c.add(actor);
       }
       if(u.hp<=0)c.setAlpha(.35);
       if(selected){
-        const marker=scene.add.ellipse(0,9,77,17).setStrokeStyle(3,0xe6bd69);
+        const marker=scene.add.ellipse(0,10,55,13).setStrokeStyle(3,0xe6bd69);
         c.add(marker);
         scene.tweens.add({targets:marker,alpha:.4,duration:470,yoyo:true,repeat:-1});
       }
@@ -102,18 +102,14 @@ function mount(){
       if(!enemy&&acted.includes(u.id))c.add(scene.add.text(29,-96,'✓',{fontFamily:'monospace',fontSize:'18px',color:'#f3cb80'}));
       if(u.ward)c.add(scene.add.text(0,-109,'✧ SELO',{fontFamily:'monospace',fontSize:'10px',color:'#f2c4ff'}).setOrigin(.5));
       const max=Math.max(1,u.maxhp);
-      // Keep the HUD outside the scaled sprite: text stays readable even with four units.
-      const hud=scene.add.container(x,y+12).setDepth(800);
-      const panel=scene.add.rectangle(0,14,104,36,0x101c27,.85).setStrokeStyle(1,enemy?0x8e5e69:0x65877d);
-      const hpBack=scene.add.rectangle(0,1,95,6,0x332932);
-      const hpFill=scene.add.rectangle(-47,1,94*Math.max(0,Math.min(1,u.hp/max)),5,enemy?0xcf7b81:0x86c7a3).setOrigin(0,.5);
-      const shortName=u.name.length>16?u.name.slice(0,15)+'…':u.name;
-      const label=scene.add.text(0,12,shortName,{fontFamily:'monospace',fontSize:'9px',color:'#f6e8d4'}).setOrigin(.5);
-      const stats=scene.add.text(0,25,u.hp+'/'+u.maxhp+' PV'+(enemy?'':' / '+u.mp+' F'),{fontFamily:'monospace',fontSize:'9px',color:'#edcf9f'}).setOrigin(.5);
-      hud.add([panel,hpBack,hpFill,label,stats]);
+      // Battlefield only shows a short HP bar; identities live in the top roster.
+      const hud=scene.add.container(x,y+13).setDepth(800);
+      const hpBack=scene.add.rectangle(0,0,62,7,0x292632).setStrokeStyle(1,0x8f7b6a);
+      const hpFill=scene.add.rectangle(-30,0,60*Math.max(0,Math.min(1,u.hp/max)),5,enemy?0xd07880:0x8bcfa9).setOrigin(0,.5);
+      hud.add([hpBack,hpFill]);
       const key=(enemy?'e':'h')+u.id;
       unitsByKey.set(key,{c,actor,x,y});
-      const hit=scene.add.zone(x,y-31*scale,104,Math.min(64,88*scale)).setDepth(900).setInteractive({useHandCursor:true});
+      const hit=scene.add.zone(x,y-24*scale,92,Math.min(59,81*scale)).setDepth(900).setInteractive({useHandCursor:true});
       hit.on('pointerdown',()=>{if(u.hp<=0)return;window.RevoltBattleBridge.command((enemy?'targetE:':'selectHero:')+u.id)});
       scene.tweens.add({targets:c,y:y-2.5*scale,duration:900+((Number(u.id)||0)*117)%400,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     }
@@ -122,19 +118,39 @@ function mount(){
       const n=units.length;
       // JRPG-style staggered ranks; foes left, resistance right.
       const positions={
-        1:[{y:242,dx:0}],
-        2:[{y:190,dx:-17},{y:305,dx:18}],
-        3:[{y:149,dx:-16},{y:250,dx:22},{y:352,dx:-8}],
-        4:[{y:135,dx:-16},{y:207,dx:17},{y:279,dx:-16},{y:351,dx:17}]
+        1:[{y:315,dx:0}],
+        2:[{y:260,dx:-26},{y:359,dx:27}],
+        3:[{y:231,dx:-26},{y:309,dx:26},{y:386,dx:-26}],
+        4:[{y:226,dx:-27},{y:280,dx:26},{y:333,dx:-27},{y:386,dx:26}]
       };
       const slots=positions[Math.min(4,n)]||positions[1];
-      const scale=n===1?.90:n===2?.78:n===3?.68:.60;
+      const scale=(n===1?.96:n===2?.84:n===3?.73:.64)*.8;
       units.forEach((u,i)=>{
         const pos=slots[i]||slots[slots.length-1];
-        const x=(enemy?101:319)+(enemy?pos.dx:-pos.dx);
+        const x=(enemy?102:318)+(enemy?pos.dx:-pos.dx);
         figure(this,u,enemy,x,pos.y,state.selected===(enemy?'e':'h')+u.id,scale);
       });
     };
+    // Upper roster: full names, current HP and Foco, and selection feedback.
+    const topRoster=(units,enemy)=>{
+      const x=enemy?103:317;
+      const y=100;
+      const height=14+units.length*19;
+      const shade=this.add.rectangle(x,y+height/2,190,height,0x101a25,.93).setStrokeStyle(1,enemy?0x926372:0x658c79).setDepth(950);
+      units.forEach((u,i)=>{
+        const yy=y+11+i*19;
+        const key=(enemy?'e':'h')+u.id;
+        const focused=state.selected===key;
+        if(focused)this.add.rectangle(x,yy,182,18,0x846741,.46).setDepth(951);
+        const nm=u.name.length>20?u.name.slice(0,19)+'…':u.name;
+        const label=this.add.text(x-88,yy,nm,{fontFamily:'monospace',fontSize:'9px',color:u.hp<=0?'#888b90':focused?'#ffdda1':'#ede2cc'}).setOrigin(0,.5).setDepth(952);
+        const hp=this.add.text(x+88,yy,String(u.hp)+'/'+u.maxhp,{fontFamily:'monospace',fontSize:'9px',color:enemy?'#e3a3a8':'#9fd3b2'}).setOrigin(1,.5).setDepth(952);
+        this.add.zone(x,yy,186,19).setDepth(953).setInteractive({useHandCursor:true}).on('pointerdown',()=>{
+          if(u.hp>0)window.RevoltBattleBridge.command((enemy?'targetE:':'selectHero:')+u.id);
+        });
+      });
+    };
+    topRoster(state.enemies,true);topRoster(state.heroes,false);
     draw(state.heroes,false);draw(state.enemies,true);
     // Transitions are derived from canonical HP changes, never from guessed damage.
     if(previous){
