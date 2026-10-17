@@ -29,9 +29,9 @@ data.js define cada herói no vetor [id,nome,classe,ícone,HP,ATQ,DEF,VEL,habili
 
 | Marco | Prioridade | Escopo | Critério de aceite | Situação |
 |---|---|---|---|---|
-| P0 — Confiabilidade | Crítica | Corrigir índice de habilidade; testes de dano, cura, mortes, boss; sprites locais, Phaser local, tratar cache e HUD redundante | Rodada clássica e Phaser sem regressão em desktop/Android e PWA; testes automáticos básicos | Pendente |
-| T1 — Protótipo em grade | Crítica | Grid 10×10 ou 12×10, 32 px, ocupação, terreno, cursor, casas válidas, movimento, A* ou Dijkstra, cancelamento | Coto move-se, respeita obstáculos, movimento e ação permanecem corretos após recarregar | Pendente |
-| T2 — Núcleo Fire Emblem | Crítica | Alcance de armas/feitiços, ação após movimento, contra-ataque, previsão de dano/acerto, fases aliadas/inimigas, IA básica | Uma batalha completa vencível sem bugs e com decisões espaciais relevantes | Pendente |
+| P0 — Confiabilidade | Crítica | Corrigir índice de habilidade; testes de dano, cura, mortes, boss; sprites locais, Phaser local, tratar cache e HUD redundante | Rodada clássica e Phaser sem regressão em desktop/Android e PWA; testes automáticos básicos | Parcial: índice corrigido no app.js; testes iniciais do novo núcleo adicionados, não executados em CI |
+| T1 — Protótipo em grade | Crítica | Grid 10×10 ou 12×10, 32 px, ocupação, terreno, cursor, casas válidas, movimento, A* ou Dijkstra, cancelamento | Coto move-se, respeita obstáculos, movimento e ação permanecem corretos após recarregar | Parcial: laboratório 10×9, BFS, ocupação, obstáculos, ponte, seleção e deslocamento; persistência não implementada |
+| T2 — Núcleo Fire Emblem | Crítica | Alcance de armas/feitiços, ação após movimento, contra-ataque, previsão de dano/acerto, fases aliadas/inimigas, IA básica | Uma batalha completa vencível sem bugs e com decisões espaciais relevantes | Protótipo inicial: ataque adjacente, previsão de dano determinística, contra-ataque, turno inimigo; faltam acerto, múltiplas armas, objetivos e QA real |
 | T3 — Primeiro capítulo vertical | Alta | Dia 1 redesenhado: mapa Distrito Afogado, evento da primeira espada, objetivo narrativo, tutorial contextual, vitória/derrota, save | 10–15 min de campanha jogável, testada mobile/desktop | Pendente |
 | T4 — Profundidade tática | Alta | Terrenos, cobertura, gargalos, alcance inimigo, status, arquétipos de armas e magia, objetivos variados | Três mapas com estratégias distintas, mapa e previsão legíveis | Pendente |
 | T5 — Pessoas e consequências | Alta | Habilidades pessoais confiáveis, suporte entre personagens, ferimentos, fadiga, permadeath com opção de dificuldade | Relações e perdas afetam missões e combates; sem softlocks | Pendente |
@@ -128,3 +128,31 @@ Começar com estados pequenos: patrulhar, defender posição, priorizar civil/al
 - Phaser pathfinding e custo de terreno: https://phaser.io/news/2018/03/pathfinding-and-phaser-3
 
 **Esta documentação não modifica o jogo publicado.** Iniciar implementação somente pelo P0 + T1/T2 com testes.
+
+## Entrega experimental — fundação tática T1/T2 + correção P0 (16/10/2026)
+
+**Status:** código e protótipo publicados na branch `main`. **A batalha principal dos 42 dias NÃO foi substituída.** Protótipo não lê nem modifica o localStorage da campanha. Phaser ainda é carregado via CDN e esta página experimental não está no pré-cache do PWA.
+
+### Mudanças de código
+- `app.js`: corrige um defeito verificável em três pontos que liam `heroData(h.id)[9]` ou `d[9]` como chave de habilidade. O array em `data.js` declara a habilidade no índice **8** e a descrição no índice **9**. Essa correção pode mudar o funcionamento de habilidades que antes usavam ramo genérico e requer teste de regressão.
+- `tactical-core.js` (novo): núcleo puro, sem Phaser nem DOM, com grade ortogonal **10×9**, água, ponte, obstáculos, ocupação, BFS de movimento com custo uniforme, seleção de Coto, deslocamento limitado, ataque adjacente, previsão de dano, contra-ataque, IA de aproximação e condições de vitória/derrota. Combate determinístico apenas no laboratório.
+- `tactical-lab.html` (novo): cena Phaser 3 isolada; casas de movimento destacadas, toque no terreno, personagens/HP, botão Atacar, Encerrar turno e Reiniciar. Link direto: `https://pedromaintenance.github.io/a-revolta-dos-mendigos/tactical-lab.html`.
+- `tests/tactics.test.js` (novo): sete testes Node para obstáculos, alcance, movimento único, ataque inválido, contra-ataque, turno inimigo e vitória. Executar com `node tests/tactics.test.js`.
+
+### Limitações desta entrega
+1. Sprite gráfico é **placeholder geométrico** para focar mecânicas. Não há spritesheets animadas de produção.
+2. Não há tela de confirmação de trajetória, desfazer movimento, alcance de feitiço, acerto probabilístico, níveis, fadiga nem múltiplas unidades.
+3. O mapa demonstra o núcleo, mas não integra as variáveis de dano, defesa, economia ou missões da campanha original: **não prometer paridade das regras**.
+4. O estado tático é inteiramente volátil: F5 reinicia o laboratório; essa é uma separação intencional até criar migração de saves.
+5. Não houve teste visual/navegador nem execução da suíte no ambiente do GitHub Pages. O Pages pode levar algum tempo para atualizar.
+
+### Critérios para aprovar o protótipo e iniciar T3
+- [ ] Abrir o laboratório no navegador mobile e desktop sem canvas vazio
+- [ ] Selecionar Coto e tocar em casas azuis, verificando impedimento de atravessar água fora da ponte
+- [ ] Terminar um turno e observar aproximação/ataque da Guarda
+- [ ] Verificar previsão de dano e contra-ataque ao ficar adjacente
+- [ ] Vencer ou perder sem tela travar; reiniciar funciona
+- [ ] Rodar `node tests/tactics.test.js` e registrar o resultado
+- [ ] Corrigir diferenças de interação e acessibilidade antes de vincular a campanha real
+
+**Próxima entrega recomendada:** 1º capítulo tático com mapa autoral, controle de câmera, linha de movimento, dados reais do Coto e do Guarda, painel de confirmação e eventos estruturados. Só depois substituir o fluxo de batalha principal.
