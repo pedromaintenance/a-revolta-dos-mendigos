@@ -241,6 +241,7 @@ function playEvents(events,onDone){
    before:{units:[event.attackerBefore,event.defenderBefore]},
    after:{units:[event.attackerAfter,event.defenderAfter]},
    attackerId:event.attackerBefore.id,defenderId:event.defenderBefore.id,
+   kind:event.kind||'attack',
    sequencePosition:++played,sequenceTotal:total,onSkipAll:finish,onDone:next
   });}catch(error){console.error('Erro no evento cinematográfico:',error);next()}
  };
